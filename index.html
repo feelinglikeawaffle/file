@@ -3,27 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Digital Declutterer - Ultimate OS Tidier & File Explorer Simulator</title>
+    <title>Digital Declutterer - OS File Sorting Game</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
             darkMode: 'class',
             theme: {
                 extend: {
                     colors: {
-                        osDark: '#090d16',
-                        osDarkSurface: '#111827',
-                        osDarkBorder: '#1f2937',
+                        osDark: '#0b0f19',
+                        osSurface: '#111827',
+                        osBorder: '#1f2937',
                         osAccent: '#3b82f6',
-                        osAccentHover: '#2563eb',
+                        osSuccess: '#10b981',
                         osDanger: '#ef4444',
-                        osWarning: '#f59e0b',
-                        osSuccess: '#10b981'
+                        osWarning: '#f59e0b'
                     },
                     fontFamily: {
                         sans: ['Inter', 'sans-serif'],
@@ -36,391 +35,258 @@
     <style>
         /* Custom Scrollbars */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.1); }
-        .dark ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.3); }
-        ::-webkit-scrollbar-thumb { background: rgba(156, 163, 175, 0.4); border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: rgba(107, 114, 128, 0.7); }
+        ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.2); }
+        ::-webkit-scrollbar-thumb { background: rgba(156, 163, 175, 0.3); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(156, 163, 175, 0.6); }
 
         /* Selection Box (Lasso) */
         #selection-box {
             position: absolute;
             border: 1px dashed #3b82f6;
-            background-color: rgba(59, 130, 246, 0.15);
+            background-color: rgba(59, 130, 246, 0.18);
             pointer-events: none;
             z-index: 40;
             display: none;
         }
 
-        /* Glitch & Corrupted File Animations */
-        @keyframes pulse-glitch {
-            0%, 100% { border-color: rgba(239, 68, 68, 0.8); box-shadow: 0 0 10px rgba(239, 68, 68, 0.4); }
-            50% { border-color: rgba(168, 85, 247, 0.8); box-shadow: 0 0 18px rgba(168, 85, 247, 0.6); }
+        /* Glitch & Hazard Animations */
+        @keyframes hazard-pulse {
+            0%, 100% { border-color: rgba(239, 68, 68, 0.9); box-shadow: 0 0 12px rgba(239, 68, 68, 0.5); }
+            50% { border-color: rgba(245, 158, 11, 0.9); box-shadow: 0 0 18px rgba(245, 158, 11, 0.7); }
         }
-        .corrupted-glitch {
-            animation: pulse-glitch 1.5s infinite alternate;
+        .hazard-active {
+            animation: hazard-pulse 1s infinite alternate;
         }
 
-        /* Theme Overrides */
-        body.theme-win98 {
-            background-color: #008080 !important;
-            font-family: 'Courier New', monospace !important;
+        @keyframes glitch-shake {
+            0% { transform: translate(0, 0); }
+            20% { transform: translate(-2px, 2px); }
+            40% { transform: translate(2px, -1px); }
+            60% { transform: translate(-1px, -2px); }
+            80% { transform: translate(2px, 1px); }
+            100% { transform: translate(0, 0); }
         }
-        body.theme-synthwave {
-            background: linear-gradient(135deg, #180326 0%, #30064a 50%, #5d0258 100%) !important;
-        }
-        body.theme-cyberpunk {
-            background-color: #05050a !important;
+        .corrupted-item {
+            animation: glitch-shake 0.3s infinite;
+            border-color: #ef4444 !important;
+            background-color: rgba(239, 68, 68, 0.15) !important;
         }
 
         .no-select {
             user-select: none;
             -webkit-user-select: none;
         }
+
+        /* Drag target highlight */
+        .drag-over-folder {
+            outline: 2px dashed #3b82f6 !important;
+            background-color: rgba(59, 130, 246, 0.25) !important;
+        }
     </style>
 </head>
-<body class="dark bg-osDark text-slate-100 font-sans h-screen overflow-hidden no-select antialiased flex flex-col select-none transition-colors duration-300">
+<body class="dark bg-osDark text-slate-100 font-sans h-screen overflow-hidden no-select antialiased flex flex-col select-none">
 
-    <!-- TOP SYSTEM HEADER TOOLBAR -->
-    <header class="h-11 bg-slate-900 border-b border-slate-800 flex items-center justify-between px-3 text-xs z-30 shadow-md">
-        <div class="flex items-center space-x-3">
+    <!-- TOP HEADER UTILITY BAR -->
+    <header class="h-12 bg-slate-900 border-b border-slate-800 flex items-center justify-between px-4 text-xs z-30 shadow-lg">
+        <div class="flex items-center space-x-4">
             <span class="font-extrabold flex items-center gap-2 text-blue-400 text-sm tracking-wide">
-                <i class="fa-solid fa-hard-drive text-amber-500 text-base"></i> OS DECLUTTERER <span class="text-[9px] bg-blue-600/30 text-blue-300 border border-blue-500/40 px-1.5 py-0.5 rounded font-mono">v4.0 MAX</span>
+                <i class="fa-solid fa-folder-tree text-amber-400 text-base"></i> DIGITAL DECLUTTERER
+                <span class="text-[10px] bg-blue-500/20 text-blue-300 border border-blue-500/30 px-2 py-0.5 rounded font-mono font-bold">OS OS v5.0</span>
             </span>
+            
             <div class="h-4 w-px bg-slate-800"></div>
 
             <!-- Header Action Buttons -->
-            <button id="menu-btn-shop" class="hover:bg-slate-800 px-2.5 py-1 rounded-md flex items-center gap-1.5 text-amber-400 font-medium transition">
+            <button id="btn-shop" class="hover:bg-slate-800 px-3 py-1.5 rounded-lg flex items-center gap-2 text-amber-400 font-semibold transition border border-amber-500/20">
                 <i class="fa-solid fa-shop"></i> Tech Shop
             </button>
-            <button id="menu-btn-rules" class="hover:bg-slate-800 px-2.5 py-1 rounded-md flex items-center gap-1.5 text-purple-400 font-medium transition">
-                <i class="fa-solid fa-wand-magic-sparkles"></i> Auto-Rules
+            <button id="btn-select-wrong" class="hover:bg-slate-800 px-3 py-1.5 rounded-lg flex items-center gap-2 text-rose-400 font-semibold transition border border-rose-500/20">
+                <i class="fa-solid fa-object-group"></i> Select Misplaced
             </button>
-            <button id="menu-btn-spawner" class="hover:bg-slate-800 px-2.5 py-1 rounded-md flex items-center gap-1.5 text-emerald-400 font-medium transition">
-                <i class="fa-solid fa-bolt"></i> Spawn Chaos
-            </button>
-            <button id="menu-btn-bots" class="hover:bg-slate-800 px-2.5 py-1 rounded-md flex items-center gap-1.5 text-cyan-400 font-medium transition">
-                <i class="fa-solid fa-robot"></i> Active Bots (<span id="active-bots-count">0</span>)
+            <button id="btn-auto-sort" class="hover:bg-blue-600/20 px-3 py-1.5 rounded-lg flex items-center gap-2 text-blue-400 font-semibold transition border border-blue-500/20">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> Auto-Sort Safe
             </button>
         </div>
 
-        <div class="flex items-center space-x-3">
-            <!-- Data Credits Badge -->
-            <div class="flex items-center gap-2 bg-slate-950 border border-amber-500/30 px-3 py-1 rounded-full text-amber-400 font-mono font-bold shadow-inner">
-                <i class="fa-solid fa-coins text-xs"></i>
-                <span id="player-credits">2,500</span> <span class="text-[10px] text-slate-500">BYTES</span>
+        <div class="flex items-center space-x-4">
+            <!-- Global Sorting Progress Tracker -->
+            <div class="flex items-center gap-3 bg-slate-950 border border-slate-800 px-3.5 py-1.5 rounded-xl shadow-inner">
+                <span class="text-slate-400 font-medium">Sorted:</span>
+                <div class="w-32 bg-slate-900 h-2.5 rounded-full overflow-hidden border border-slate-800 flex">
+                    <div id="global-progress-bar" class="bg-emerald-500 h-full transition-all duration-300" style="width: 0%;"></div>
+                </div>
+                <span id="global-progress-text" class="font-mono font-bold text-emerald-400">0 / 0 (0%)</span>
             </div>
 
-            <!-- Drive / Sector Selector -->
-            <select id="level-select" class="bg-slate-950 border border-slate-700 rounded-md px-2.5 py-1 text-xs font-semibold text-slate-200 focus:outline-none focus:border-blue-500">
-                <option value="1">Sector C: Downloads Chaos (Basic)</option>
-                <option value="2">Sector D: Storage Vault (Duplicates)</option>
-                <option value="3">Sector E: Server Core (Viruses & Worms)</option>
-                <option value="4">Sector F: Glitch Network (Ransomware)</option>
-                <option value="5">Sector G: Cloud Sync (Deep Hierarchy)</option>
-                <option value="6">Sector H: Ancient Archives (Locked Zips)</option>
-            </select>
-
-            <!-- Theme & Audio Controls -->
-            <div class="flex items-center gap-1 border-l border-slate-800 pl-2">
-                <select id="theme-select" class="bg-slate-950 border border-slate-700 rounded px-1.5 py-0.5 text-[11px] text-slate-300">
-                    <option value="dark">Dark Obsidian</option>
-                    <option value="cyberpunk">Cyberpunk</option>
-                    <option value="synthwave">Synthwave</option>
-                    <option value="win98">Classic Win98</option>
-                </select>
-                <button id="toggle-audio" class="p-1.5 hover:bg-slate-800 rounded text-slate-300" title="Toggle SFX">
-                    <i class="fa-solid fa-volume-high" id="audio-icon"></i>
-                </button>
+            <!-- Player Bytes Credits -->
+            <div class="flex items-center gap-2 bg-slate-950 border border-amber-500/30 px-3 py-1.5 rounded-xl text-amber-400 font-mono font-bold shadow-inner">
+                <i class="fa-solid fa-coins"></i>
+                <span id="player-credits">500</span> <span class="text-[10px] text-slate-500">BYTES</span>
             </div>
+
+            <!-- Sound Toggle -->
+            <button id="btn-audio-toggle" class="p-2 hover:bg-slate-800 rounded-lg text-slate-300 transition">
+                <i id="audio-icon" class="fa-solid fa-volume-high"></i>
+            </button>
         </div>
     </header>
 
-    <!-- EXPLORER SHELL TOP UTILITY BAR -->
-    <div class="p-2 bg-slate-950 border-b border-slate-800 flex flex-col gap-2 select-none">
-        <!-- Path Navigation & Search -->
-        <div class="flex items-center justify-between gap-2">
-            <div class="flex items-center gap-1">
-                <button id="nav-back" class="p-1.5 hover:bg-slate-800 rounded text-slate-400 hover:text-white disabled:opacity-30"><i class="fa-solid fa-arrow-left"></i></button>
-                <button id="nav-up" class="p-1.5 hover:bg-slate-800 rounded text-slate-400 hover:text-white"><i class="fa-solid fa-arrow-up"></i></button>
-                <button id="nav-refresh" class="p-1.5 hover:bg-slate-800 rounded text-slate-400 hover:text-white"><i class="fa-solid fa-rotate-right"></i></button>
-            </div>
-
-            <!-- Breadcrumbs -->
-            <div id="breadcrumbs" class="flex-1 bg-slate-900 border border-slate-800 rounded-md px-3 py-1 flex items-center gap-1.5 text-xs font-mono overflow-x-auto text-slate-300">
-                <!-- Dynamic breadcrumbs -->
-            </div>
-
-            <!-- Instant Search Input -->
-            <div class="relative w-64">
-                <i class="fa-solid fa-magnifying-glass absolute left-2.5 top-2 text-slate-500 text-xs"></i>
-                <input type="text" id="search-input" placeholder="Search current sector files..." class="w-full bg-slate-900 border border-slate-800 rounded-md pl-8 pr-3 py-1 text-xs text-slate-200 focus:outline-none focus:border-blue-500 font-mono">
-            </div>
+    <!-- EXPLORER NAVIGATION TOOLBAR -->
+    <div class="p-2.5 bg-slate-950 border-b border-slate-800 flex items-center justify-between gap-3 text-xs select-none">
+        <div class="flex items-center gap-1.5">
+            <button id="nav-up" class="px-2.5 py-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-lg text-slate-300 font-semibold flex items-center gap-1.5 transition" title="Go to Parent Folder">
+                <i class="fa-solid fa-arrow-up text-blue-400"></i> Up
+            </button>
+            <button id="nav-refresh" class="p-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-lg text-slate-400 hover:text-white transition">
+                <i class="fa-solid fa-rotate-right"></i>
+            </button>
         </div>
 
-        <!-- Quick Batch Actions Toolbar -->
-        <div class="flex items-center justify-between gap-2 pt-1 border-t border-slate-800/80 text-xs">
-            <div class="flex items-center gap-1.5 flex-wrap">
-                <span class="text-[10px] uppercase font-bold text-slate-500 tracking-wider mr-1">Batch Tools:</span>
-                <button id="batch-move-img" class="px-2 py-1 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded text-emerald-400 flex items-center gap-1 font-medium transition">
-                    <i class="fa-solid fa-file-image"></i> Move Images
-                </button>
-                <button id="batch-move-docs" class="px-2 py-1 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded text-blue-400 flex items-center gap-1 font-medium transition">
-                    <i class="fa-solid fa-file-lines"></i> Move Docs
-                </button>
-                <button id="batch-clean-junk" class="px-2 py-1 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded text-red-400 flex items-center gap-1 font-medium transition">
-                    <i class="fa-solid fa-trash-can"></i> Purge Junk
-                </button>
-                <button id="batch-auto-sort" class="px-2 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded flex items-center gap-1 font-semibold transition shadow-sm">
-                    <i class="fa-solid fa-wand-magic-sparkles"></i> Auto-Sort All
-                </button>
-                <button id="batch-antivirus" class="px-2 py-1 bg-emerald-700 hover:bg-emerald-600 text-white rounded flex items-center gap-1 font-semibold transition">
-                    <i class="fa-solid fa-shield-virus"></i> Deep Virus Scan
-                </button>
-            </div>
+        <!-- Sticky Breadcrumb Trail -->
+        <div id="breadcrumb-bar" class="flex-1 bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5 flex items-center gap-2 font-mono text-slate-300 overflow-x-auto">
+            <!-- Dynamic breadcrumb links -->
+        </div>
 
-            <div class="flex items-center gap-2">
-                <span class="text-slate-500 text-[11px]">View:</span>
-                <div class="flex border border-slate-800 rounded-md overflow-hidden bg-slate-900">
-                    <button id="view-grid-btn" class="p-1 px-2.5 bg-blue-600 text-white"><i class="fa-solid fa-border-all"></i></button>
-                    <button id="view-list-btn" class="p-1 px-2.5 text-slate-400 hover:text-slate-200"><i class="fa-solid fa-list"></i></button>
-                </div>
-            </div>
+        <!-- Search Bar -->
+        <div class="relative w-64">
+            <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-500"></i>
+            <input type="text" id="search-input" placeholder="Search current directory..." class="w-full bg-slate-900 border border-slate-800 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-blue-500 font-mono">
+        </div>
+
+        <!-- View Toggle -->
+        <div class="flex border border-slate-800 rounded-lg overflow-hidden bg-slate-900">
+            <button id="view-grid-btn" class="p-1.5 px-3 bg-blue-600 text-white font-semibold"><i class="fa-solid fa-border-all"></i> Grid</button>
+            <button id="view-list-btn" class="p-1.5 px-3 text-slate-400 hover:text-slate-200 font-semibold"><i class="fa-solid fa-list"></i> List</button>
         </div>
     </div>
 
     <!-- MAIN OS WORKSPACE -->
     <div class="flex-1 flex overflow-hidden relative">
 
-        <!-- SIDEBAR NAVIGATION TREE & SPECIAL VAULTS -->
-        <aside class="w-56 border-r border-slate-800 bg-slate-950/90 flex flex-col p-2 select-none overflow-y-auto">
-            <div class="text-[10px] font-extrabold tracking-wider text-slate-500 uppercase px-2 mb-1.5">System Drives</div>
-            <div id="drive-tree-root" class="space-y-0.5 text-xs">
-                <!-- Dynamic Drive Items -->
-            </div>
-
-            <div class="mt-4 text-[10px] font-extrabold tracking-wider text-slate-500 uppercase px-2 mb-1.5">Disposal Vaults</div>
-            <div class="space-y-1 text-xs">
-                <div id="drop-recycle-bin" class="p-2 rounded-lg flex items-center justify-between border border-dashed border-red-500/40 bg-red-500/5 hover:bg-red-500/15 transition cursor-pointer">
-                    <span class="flex items-center gap-2 text-red-400 font-semibold">
-                        <i class="fa-solid fa-trash-can text-sm"></i> Recycle Bin
-                    </span>
-                    <span id="trash-count-badge" class="text-[10px] bg-red-600 text-white rounded-full px-1.5 py-0.2 font-mono">0</span>
-                </div>
-                <div id="drop-quarantine" class="p-2 rounded-lg flex items-center justify-between border border-dashed border-emerald-500/40 bg-emerald-500/5 hover:bg-emerald-500/15 transition cursor-pointer">
-                    <span class="flex items-center gap-2 text-emerald-400 font-semibold">
-                        <i class="fa-solid fa-shield-virus text-sm"></i> Quarantine Vault
-                    </span>
-                    <span id="quarantine-count-badge" class="text-[10px] bg-emerald-600 text-white rounded-full px-1.5 py-0.2 font-mono">0</span>
+        <!-- SIDEBAR DIRECTORY TREE (PERMANENTLY EXPANDED FOR EASY 1-CLICK DRAG & DROP) -->
+        <aside class="w-64 border-r border-slate-800 bg-slate-950/90 flex flex-col p-3 select-none overflow-y-auto space-y-4">
+            <div>
+                <div class="text-[10px] font-extrabold tracking-wider text-slate-500 uppercase px-2 mb-2">System Drives</div>
+                <div id="drive-selector-list" class="space-y-1">
+                    <!-- Dynamic Drive Items -->
                 </div>
             </div>
 
-            <!-- Dynamic Active Objectives Sidebar Panel -->
-            <div class="mt-auto pt-3 border-t border-slate-800/80">
-                <div class="bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs shadow-md space-y-2">
-                    <div class="font-bold flex items-center justify-between text-blue-400">
-                        <span class="flex items-center gap-1.5"><i class="fa-solid fa-bullseye"></i> Sector Goals</span>
-                        <span id="goals-percent" class="font-mono text-[11px] bg-blue-950 px-1.5 rounded text-blue-300">0%</span>
-                    </div>
-                    <ul id="goals-list" class="space-y-1.5 text-[11px] text-slate-300">
-                        <!-- Dynamic list -->
-                    </ul>
+            <div>
+                <div class="text-[10px] font-extrabold tracking-wider text-slate-500 uppercase px-2 mb-2">Target Folders (Drag Here)</div>
+                <div id="target-folder-tree" class="space-y-1 font-mono text-xs">
+                    <!-- Dynamic Folder Tree -->
+                </div>
+            </div>
 
-                    <!-- Urgent Timed Event Goal Container -->
-                    <div id="urgent-goal-box" class="hidden bg-amber-950/60 border border-amber-500/50 p-2 rounded text-[11px] space-y-1">
-                        <div class="font-bold text-amber-400 flex justify-between items-center">
-                            <span><i class="fa-solid fa-clock"></i> BOUNTY ALERT</span>
-                            <span id="urgent-timer" class="font-mono text-red-400">30s</span>
-                        </div>
-                        <div id="urgent-desc" class="text-slate-200">Move 10 Documents to /Documents!</div>
+            <div>
+                <div class="text-[10px] font-extrabold tracking-wider text-slate-500 uppercase px-2 mb-2">Disposal Vaults</div>
+                <div class="space-y-1 text-xs">
+                    <div id="drop-trash-bin" class="p-2.5 rounded-xl border border-dashed border-red-500/40 bg-red-500/5 hover:bg-red-500/15 transition cursor-pointer flex items-center justify-between">
+                        <span class="flex items-center gap-2 text-red-400 font-semibold">
+                            <i class="fa-solid fa-trash-can text-base"></i> Recycle Bin
+                        </span>
+                        <span id="trash-count-badge" class="text-[10px] bg-red-600 text-white font-mono rounded-full px-2 py-0.5 font-bold">0</span>
                     </div>
+                    <div id="drop-quarantine" class="p-2.5 rounded-xl border border-dashed border-emerald-500/40 bg-emerald-500/5 hover:bg-emerald-500/15 transition cursor-pointer flex items-center justify-between">
+                        <span class="flex items-center gap-2 text-emerald-400 font-semibold">
+                            <i class="fa-solid fa-shield-virus text-base"></i> Quarantine Vault
+                        </span>
+                        <span id="quarantine-count-badge" class="text-[10px] bg-emerald-600 text-white font-mono rounded-full px-2 py-0.5 font-bold">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Active Bounty Objectives -->
+            <div class="mt-auto pt-2 border-t border-slate-800">
+                <div id="urgent-bounty-card" class="hidden bg-amber-950/40 border border-amber-500/40 rounded-xl p-3 text-xs space-y-1.5 shadow-lg">
+                    <div class="font-bold text-amber-400 flex justify-between items-center">
+                        <span class="flex items-center gap-1.5"><i class="fa-solid fa-clock"></i> VIP BOUNTY</span>
+                        <span id="bounty-timer" class="font-mono text-rose-400 font-bold">30s</span>
+                    </div>
+                    <div id="bounty-description" class="text-slate-300 font-medium leading-snug">Move 5 .py scripts to /Code!</div>
+                    <div class="text-[10px] text-amber-300/80 font-mono font-semibold">+300 BYTES REWARD</div>
                 </div>
             </div>
         </aside>
 
-        <!-- MAIN FILE VIEWPORT (GRID / LIST) -->
+        <!-- MAIN FILE VIEWPORT (NO PREVIEW PANE FOR MAX SPEED) -->
         <main id="file-viewport" class="flex-1 p-4 overflow-y-auto relative bg-slate-900/40 focus:outline-none" tabindex="0">
-            <!-- Dynamic Files Container -->
-            <div id="file-container" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 gap-3 min-h-full content-start">
+            
+            <!-- EXECUTABLE HAZARD WARNING BANNER -->
+            <div id="hazard-warning-banner" class="hidden mb-3 p-3 bg-red-950/80 border border-red-500/60 rounded-xl text-xs flex items-center justify-between text-red-200 hazard-active shadow-xl">
+                <div class="flex items-center gap-3">
+                    <i class="fa-solid fa-triangle-exclamation text-xl text-red-400 animate-bounce"></i>
+                    <div>
+                        <span class="font-bold text-red-300 uppercase tracking-wide">Unsafe Executables / Scripts Detected!</span>
+                        <p class="text-red-200/80 text-[11px]">Misplaced .exe and .py files are active hazard risks! Move them to <b>/Programs</b> or <b>/Code</b> before they corrupt!</p>
+                    </div>
+                </div>
+                <span id="hazard-countdown-badge" class="font-mono font-extrabold text-sm bg-red-900/80 border border-red-500/50 px-3 py-1 rounded-lg text-red-200">RISK ACTIVE</span>
+            </div>
+
+            <!-- Files Grid/List Container -->
+            <div id="file-container" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3.5 min-h-full content-start">
                 <!-- Dynamic files & folders rendered here -->
             </div>
 
-            <!-- Lasso Drag Selection Overlay Box -->
+            <!-- Lasso Drag Selection Box -->
             <div id="selection-box"></div>
         </main>
-
-        <!-- FILE PREVIEW & DETAILED INSPECTOR SIDEBAR -->
-        <aside id="preview-pane" class="w-72 border-l border-slate-800 bg-slate-950 p-3 flex flex-col text-xs overflow-y-auto">
-            <div class="text-[10px] font-extrabold tracking-wider text-slate-500 uppercase mb-2">Live File Inspector</div>
-
-            <div id="preview-content-empty" class="flex-1 flex flex-col items-center justify-center text-slate-500 text-center p-4">
-                <i class="fa-solid fa-file-circle-question text-5xl mb-3 opacity-30"></i>
-                <p>Select any file to render procedural images, text logs, waveform synth audio, or hex viewer.</p>
-            </div>
-
-            <div id="preview-content" class="hidden flex-col h-full space-y-3">
-                <!-- File Icon & Name Header -->
-                <div class="p-3 bg-slate-900 rounded-lg border border-slate-800 flex flex-col items-center text-center shadow">
-                    <div id="preview-icon" class="text-5xl my-1"></div>
-                    <div id="preview-filename" class="font-bold text-sm truncate w-full text-slate-200"></div>
-                    <div id="preview-filetype" class="text-[10px] text-slate-400 font-mono mt-0.5"></div>
-                </div>
-
-                <!-- Rich Dynamic Visual/Interactive Canvas Preview Area -->
-                <div id="preview-visual-box" class="h-36 bg-slate-900 rounded-lg border border-slate-800 flex items-center justify-center p-2 overflow-hidden text-slate-400 relative">
-                    <!-- Dynamic live preview components (Canvas images, text viewer, audio synth, hex viewer) -->
-                </div>
-
-                <!-- File Metadata Details -->
-                <div class="bg-slate-900 rounded-lg border border-slate-800 p-2.5 space-y-1.5 text-[11px] font-mono">
-                    <div class="flex justify-between"><span class="text-slate-500">Size:</span> <span id="meta-size" class="text-slate-300"></span></div>
-                    <div class="flex justify-between"><span class="text-slate-500">Modified:</span> <span id="meta-date" class="text-slate-300"></span></div>
-                    <div class="flex justify-between"><span class="text-slate-500">Status:</span> <span id="meta-status" class="font-bold"></span></div>
-                    <div class="flex justify-between"><span class="text-slate-500">MD5 Hash:</span> <span id="meta-hash" class="text-[9px] text-slate-400 truncate max-w-[120px]"></span></div>
-                </div>
-
-                <!-- Action Buttons -->
-                <div class="mt-auto space-y-1.5 pt-2">
-                    <button id="btn-preview-delete" class="w-full py-1.5 bg-red-600 hover:bg-red-500 text-white rounded-md font-semibold text-xs flex items-center justify-center gap-2 shadow-sm transition">
-                        <i class="fa-solid fa-trash"></i> Send to Recycle Bin
-                    </button>
-                    <button id="btn-preview-quarantine" class="w-full py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-md font-semibold text-xs flex items-center justify-center gap-2 shadow-sm transition">
-                        <i class="fa-solid fa-shield-virus"></i> Quarantine File
-                    </button>
-                </div>
-            </div>
-        </aside>
-
     </div>
 
-    <!-- BOTTOM STATUS BAR & DRIVE USAGE GAUGE -->
-    <footer class="h-8 bg-slate-950 border-t border-slate-800 px-3 flex items-center justify-between text-xs select-none z-20">
+    <!-- FOOTER STATUS BAR -->
+    <footer class="h-8 bg-slate-950 border-t border-slate-800 px-4 flex items-center justify-between text-xs select-none z-20 font-mono">
         <div class="flex items-center space-x-4">
-            <span id="status-selection-count" class="text-slate-400 font-medium">0 items selected</span>
+            <span id="status-selected" class="text-slate-400 font-medium">0 files selected</span>
             <span class="text-slate-700">|</span>
-            <span id="status-total-count" class="text-slate-400 font-medium">Total: 0 files</span>
+            <span id="status-folder-count" class="text-slate-400 font-medium">0 items in folder</span>
             <span class="text-slate-700">|</span>
-            <span id="status-hotkey-hint" class="text-slate-500 text-[11px]">Hotkeys: <kbd class="bg-slate-800 px-1 rounded text-slate-300">Ctrl+A</kbd> Select All, <kbd class="bg-slate-800 px-1 rounded text-slate-300">Del</kbd> Delete</span>
+            <span class="text-slate-500 text-[11px]">Hotkeys: <kbd class="bg-slate-800 px-1.5 py-0.5 rounded text-slate-300">Ctrl+A</kbd> Select All | <kbd class="bg-slate-800 px-1.5 py-0.5 rounded text-slate-300">Del</kbd> Trash</span>
         </div>
 
-        <!-- Disk Storage Capacity Gauge -->
-        <div class="flex items-center space-x-3 w-80">
-            <span class="text-[11px] font-semibold text-slate-400">Sector Disk Load:</span>
-            <div class="flex-1 bg-slate-900 h-2.5 rounded-full overflow-hidden flex border border-slate-800">
-                <div id="drive-gauge-bar" class="bg-blue-500 h-full transition-all duration-500" style="width: 50%;"></div>
-            </div>
-            <span id="drive-gauge-text" class="font-mono text-[11px] font-bold w-12 text-right text-slate-300">50%</span>
+        <div class="flex items-center gap-2 text-slate-400 text-[11px]">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span>
+            <span id="shield-status-text">Execution Shield: INACTIVE</span>
         </div>
     </footer>
 
     <!-- CONTEXT MENU (RIGHT CLICK) -->
-    <div id="context-menu" class="hidden absolute z-50 w-52 bg-slate-900 border border-slate-700 rounded-lg shadow-2xl text-xs py-1 text-slate-200">
-        <button id="ctx-open" class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex items-center gap-2"><i class="fa-solid fa-folder-open w-4 text-amber-400"></i> Open / Preview</button>
-        <button id="ctx-rename" class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex items-center gap-2"><i class="fa-solid fa-i-cursor w-4 text-purple-400"></i> Rename File (F2)</button>
+    <div id="context-menu" class="hidden absolute z-50 w-52 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl text-xs py-1.5 text-slate-200">
+        <button id="ctx-open" class="w-full text-left px-3.5 py-1.5 hover:bg-blue-600 hover:text-white flex items-center gap-2.5 font-medium"><i class="fa-solid fa-folder-open text-amber-400 w-4"></i> Open Folder</button>
+        <button id="ctx-move-correct" class="w-full text-left px-3.5 py-1.5 hover:bg-blue-600 hover:text-white flex items-center gap-2.5 font-medium"><i class="fa-solid fa-circle-check text-emerald-400 w-4"></i> Move to Belonging Target</button>
         <div class="my-1 border-t border-slate-800"></div>
-        <button id="ctx-scan" class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex items-center gap-2"><i class="fa-solid fa-shield-virus w-4 text-emerald-400"></i> Scan for Threats</button>
-        <button id="ctx-quarantine" class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex items-center gap-2"><i class="fa-solid fa-vault w-4 text-emerald-500"></i> Send to Quarantine</button>
-        <div class="my-1 border-t border-slate-800"></div>
-        <button id="ctx-delete" class="w-full text-left px-3 py-1.5 hover:bg-red-600 hover:text-white text-red-400 flex items-center gap-2"><i class="fa-solid fa-trash w-4"></i> Move to Recycle Bin</button>
+        <button id="ctx-delete" class="w-full text-left px-3.5 py-1.5 hover:bg-red-600 hover:text-white text-red-400 flex items-center gap-2.5 font-medium"><i class="fa-solid fa-trash w-4"></i> Move to Recycle Bin</button>
     </div>
 
-    <!-- MODAL WINDOWS & POPUPS -->
-
-    <!-- 1. TECH SHOP MODAL -->
-    <div id="modal-shop" class="hidden fixed inset-0 bg-black/75 backdrop-blur-md z-50 flex items-center justify-center p-4">
-        <div class="bg-slate-900 border border-slate-800 w-full max-w-2xl rounded-2xl p-6 shadow-2xl space-y-4">
+    <!-- TECH SHOP MODAL -->
+    <div id="modal-shop" class="hidden fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 w-full max-w-xl rounded-2xl p-6 shadow-2xl space-y-4">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-                <h3 class="font-extrabold flex items-center gap-2 text-amber-400 text-lg"><i class="fa-solid fa-shop"></i> IT Tech Administrator Upgrades</h3>
+                <h3 class="font-extrabold flex items-center gap-2 text-amber-400 text-lg"><i class="fa-solid fa-shop"></i> IT Administrator Tech Shop</h3>
                 <button class="close-modal text-slate-400 hover:text-white text-lg"><i class="fa-solid fa-xmark"></i></button>
             </div>
 
-            <div class="grid grid-cols-2 gap-3 text-xs" id="shop-items-grid">
-                <!-- Dynamic shop items rendered here -->
+            <div class="space-y-3 text-xs" id="shop-items-container">
+                <!-- Dynamic shop items -->
             </div>
 
             <div class="flex justify-between items-center pt-3 border-t border-slate-800">
-                <div class="text-sm font-mono text-amber-400 font-bold">Your Balance: <span id="shop-bytes-val">2,500</span> BYTES</div>
-                <button class="close-modal px-5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg font-semibold">Close</button>
+                <div class="text-sm font-mono text-amber-400 font-bold">Balance: <span id="shop-balance-display">500</span> BYTES</div>
+                <button class="close-modal px-5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl font-semibold">Close</button>
             </div>
         </div>
     </div>
 
-    <!-- 2. AUTOMATION RULES MODAL -->
-    <div id="modal-rules" class="hidden fixed inset-0 bg-black/75 backdrop-blur-md z-50 flex items-center justify-center p-4">
-        <div class="bg-slate-900 border border-slate-800 w-full max-w-lg rounded-2xl p-6 shadow-2xl space-y-4">
-            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-                <h3 class="font-extrabold flex items-center gap-2 text-purple-400 text-lg"><i class="fa-solid fa-wand-magic-sparkles"></i> Automated Sorting Pipelines</h3>
-                <button class="close-modal text-slate-400 hover:text-white text-lg"><i class="fa-solid fa-xmark"></i></button>
-            </div>
+    <!-- POPUP ALERT NOTIFICATION CONTAINER -->
+    <div id="popup-container" class="fixed bottom-12 right-6 space-y-3 z-50 pointer-events-none"></div>
 
-            <div class="space-y-3 text-xs bg-slate-950 p-3.5 rounded-xl border border-slate-800">
-                <div class="font-bold text-slate-300">Create Sorting Rule:</div>
-                <div class="grid grid-cols-3 gap-2">
-                    <select id="rule-if-type" class="bg-slate-900 border border-slate-700 rounded p-1.5 text-slate-200">
-                        <option value="ext">Extension equals</option>
-                        <option value="name_contains">Name contains</option>
-                    </select>
-                    <input id="rule-val" type="text" placeholder="e.g. png or report" class="bg-slate-900 border border-slate-700 rounded p-1.5 text-slate-200 font-mono">
-                    <select id="rule-action" class="bg-slate-900 border border-slate-700 rounded p-1.5 text-slate-200">
-                        <option value="Move to /Pictures">Move to /Pictures</option>
-                        <option value="Move to /Documents">Move to /Documents</option>
-                        <option value="Move to /Music">Move to /Music</option>
-                        <option value="Delete to Recycle Bin">Delete to Bin</option>
-                    </select>
-                </div>
-                <button id="btn-add-rule" class="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-semibold"><i class="fa-solid fa-plus"></i> Add Rule to Active List</button>
-            </div>
-
-            <div class="space-y-1.5 text-xs">
-                <div class="font-bold text-slate-400">Active Rule Pipelines:</div>
-                <div id="active-rules-list" class="max-h-40 overflow-y-auto space-y-1.5">
-                    <!-- Active rules render here -->
-                </div>
-            </div>
-
-            <div class="flex justify-end gap-2 pt-2 border-t border-slate-800">
-                <button class="close-modal px-4 py-2 bg-slate-800 rounded-lg text-slate-300">Close</button>
-                <button id="btn-execute-rules" class="px-5 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg font-semibold"><i class="fa-solid fa-play"></i> Run Rules Now</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- 3. CHAOS SPAWNER MODAL -->
-    <div id="modal-spawner" class="hidden fixed inset-0 bg-black/75 backdrop-blur-md z-50 flex items-center justify-center p-4">
-        <div class="bg-slate-900 border border-slate-800 w-full max-w-md rounded-2xl p-6 shadow-2xl space-y-4">
-            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-                <h3 class="font-extrabold flex items-center gap-2 text-emerald-400 text-lg"><i class="fa-solid fa-bolt"></i> Infinite File Chaos Spawner</h3>
-                <button class="close-modal text-slate-400 hover:text-white text-lg"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-
-            <div class="space-y-3 text-xs">
-                <div>
-                    <label class="block text-slate-400 mb-1">Number of files to generate:</label>
-                    <input id="spawn-count" type="number" min="10" max="300" value="50" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 font-mono text-slate-200">
-                </div>
-                <div class="flex items-center gap-2">
-                    <input id="spawn-include-viruses" type="checkbox" checked class="rounded">
-                    <label for="spawn-include-viruses" class="text-slate-300">Include Malicious Viruses & Ransomware</label>
-                </div>
-            </div>
-
-            <div class="flex justify-end gap-2 pt-3 border-t border-slate-800">
-                <button class="close-modal px-4 py-2 bg-slate-800 rounded-lg text-slate-300">Cancel</button>
-                <button id="btn-spawn-files" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-semibold">Spawn Files</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- DYNAMIC URGENT EVENT & ADWARE POPUP CONTAINER -->
-    <div id="popup-container" class="fixed bottom-12 right-6 space-y-3 z-50 pointer-events-none">
-        <!-- Dynamic popups rendered here -->
-    </div>
-
-    <!-- GAME ENGINE & AUDIO JS -->
+    <!-- GAME ENGINE CODE -->
     <script>
         /* ==========================================================================
-           1. WEB AUDIO SYNTHESIZER
+           1. AUDIO ENGINE (Web Audio API Synthesizer)
            ========================================================================== */
-        class SoundEngine {
+        class AudioEngine {
             constructor() {
                 this.ctx = null;
                 this.enabled = true;
@@ -442,446 +308,436 @@
                     gain.connect(this.ctx.destination);
                     osc.start();
                     osc.stop(this.ctx.currentTime + duration);
-                } catch (e) {}
+                } catch(e) {}
             }
             click() { this.playTone(800, 'sine', 0.03, 0.04); }
-            select() { this.playTone(1200, 'triangle', 0.05, 0.05); }
-            trash() { this.playTone(140, 'sawtooth', 0.2, 0.12); }
-            virus() {
-                this.playTone(250, 'sawtooth', 0.15, 0.2);
-                setTimeout(() => this.playTone(180, 'sawtooth', 0.2, 0.2), 120);
-            }
-            success() {
+            openFolder() { this.playTone(600, 'triangle', 0.06, 0.06); }
+            drop() { this.playTone(350, 'sine', 0.08, 0.08); }
+            correct() {
                 this.playTone(523.25, 'sine', 0.08, 0.1);
-                setTimeout(() => this.playTone(659.25, 'sine', 0.08, 0.1), 90);
-                setTimeout(() => this.playTone(783.99, 'sine', 0.12, 0.1), 180);
+                setTimeout(() => this.playTone(659.25, 'sine', 0.12, 0.1), 80);
             }
-            playMelody() {
-                const notes = [261.63, 329.63, 392.00, 523.25];
-                notes.forEach((n, i) => {
-                    setTimeout(() => this.playTone(n, 'triangle', 0.15, 0.08), i * 120);
-                });
+            corrupt() {
+                this.playTone(180, 'sawtooth', 0.25, 0.25);
+                setTimeout(() => this.playTone(120, 'sawtooth', 0.3, 0.25), 150);
             }
         }
-        const audio = new SoundEngine();
+        const audio = new AudioEngine();
 
         /* ==========================================================================
-           2. DATA STRUCTURES & DEFINITIONS
+           2. TARGET FOLDER RULES & MEANINGFUL FILE DATA
            ========================================================================== */
-        const FILE_TYPES = {
-            png: { cat: 'image', icon: 'fa-file-image text-emerald-400', color: '#10b981' },
-            jpg: { cat: 'image', icon: 'fa-file-image text-emerald-400', color: '#10b981' },
-            gif: { cat: 'image', icon: 'fa-file-image text-teal-400', color: '#14b8a6' },
-            pdf: { cat: 'doc', icon: 'fa-file-pdf text-red-400', color: '#f87171' },
-            docx: { cat: 'doc', icon: 'fa-file-word text-blue-400', color: '#60a5fa' },
-            txt: { cat: 'doc', icon: 'fa-file-lines text-slate-400', color: '#94a3b8' },
-            xlsx: { cat: 'doc', icon: 'fa-file-excel text-emerald-500', color: '#10b981' },
-            mp3: { cat: 'audio', icon: 'fa-file-audio text-amber-400', color: '#fbbf24' },
-            wav: { cat: 'audio', icon: 'fa-file-audio text-amber-400', color: '#fbbf24' },
-            mp4: { cat: 'video', icon: 'fa-file-video text-purple-400', color: '#c084fc' },
-            js: { cat: 'code', icon: 'fa-file-code text-yellow-400', color: '#facc15' },
-            python: { cat: 'code', icon: 'fa-file-code text-blue-500', color: '#3b82f6' },
-            zip: { cat: 'archive', icon: 'fa-file-zipper text-indigo-400', color: '#818cf8' },
-            crypto: { cat: 'malware', icon: 'fa-lock text-red-500 corrupted-glitch', color: '#ef4444' },
-            worm: { cat: 'malware', icon: 'fa-bug text-red-500 corrupted-glitch', color: '#ef4444' },
-            tmp: { cat: 'trash', icon: 'fa-file-circle-xmark text-slate-500', color: '#64748b' }
+        const TARGET_FOLDERS = {
+            'Pictures': { exts: ['jpg', 'png', 'gif', 'svg'], icon: 'fa-file-image text-emerald-400', drive: 'Drive C:' },
+            'Documents': { exts: ['pdf', 'docx', 'txt', 'xlsx'], icon: 'fa-file-lines text-blue-400', drive: 'Drive C:' },
+            'Media': { exts: ['mp3', 'wav', 'mp4', 'avi'], icon: 'fa-file-audio text-amber-400', drive: 'Drive D:' },
+            'Programs': { exts: ['exe', 'msi'], icon: 'fa-file-zipper text-purple-400', drive: 'Drive C:' },
+            'Code': { exts: ['py', 'js', 'cpp', 'html'], icon: 'fa-file-code text-cyan-400', drive: 'Drive E:' }
         };
 
+        const MEANINGFUL_FILES = [
+            // Pictures
+            { name: 'family_vacation_2024', ext: 'jpg', target: 'Pictures' },
+            { name: 'sunset_beach_selfie', ext: 'png', target: 'Pictures' },
+            { name: 'meme_cat_funny', ext: 'gif', target: 'Pictures' },
+            { name: 'company_logo_vector', ext: 'svg', target: 'Pictures' },
+            { name: 'birthday_party_photo', ext: 'jpg', target: 'Pictures' },
+            { name: 'landscape_mountain_view', ext: 'png', target: 'Pictures' },
+
+            // Documents
+            { name: 'annual_tax_return_2025', ext: 'pdf', target: 'Documents' },
+            { name: 'project_proposal_draft', ext: 'docx', target: 'Documents' },
+            { name: 'grocery_shopping_list', ext: 'txt', target: 'Documents' },
+            { name: 'q3_financial_budget', ext: 'xlsx', target: 'Documents' },
+            { name: 'meeting_notes_march', ext: 'docx', target: 'Documents' },
+            { name: 'apartment_lease_agreement', ext: 'pdf', target: 'Documents' },
+
+            // Media
+            { name: 'favorite_rock_song', ext: 'mp3', target: 'Media' },
+            { name: 'podcast_episode_12', ext: 'mp3', target: 'Media' },
+            { name: 'birthday_party_video', ext: 'mp4', target: 'Media' },
+            { name: 'guitar_solo_recording', ext: 'wav', target: 'Media' },
+            { name: 'family_reunion_movie', ext: 'avi', target: 'Media' },
+
+            // Programs (.exe hazard)
+            { name: 'game_installer_setup', ext: 'exe', target: 'Programs', isHazard: true },
+            { name: 'system_optimizer_v2', ext: 'msi', target: 'Programs', isHazard: true },
+            { name: 'video_editor_install', ext: 'exe', target: 'Programs', isHazard: true },
+            { name: 'web_browser_update', ext: 'exe', target: 'Programs', isHazard: true },
+
+            // Code (.py hazard)
+            { name: 'data_scraping_script', ext: 'py', target: 'Code', isHazard: true },
+            { name: 'main_backend_server', ext: 'py', target: 'Code', isHazard: true },
+            { name: 'interactive_webpage', ext: 'html', target: 'Code' },
+            { name: 'algorithm_sorting_demo', ext: 'cpp', target: 'Code' },
+            { name: 'automation_bot_helper', ext: 'py', target: 'Code', isHazard: true },
+
+            // Trash/Junk
+            { name: 'temp_cache_junk', ext: 'tmp', target: 'Trash' },
+            { name: 'error_crash_dump', ext: 'log', target: 'Trash' },
+            { name: 'system_backup_old', ext: 'bak', target: 'Trash' }
+        ];
+
+        /* ==========================================================================
+           3. GAME STATE
+           ========================================================================== */
         const state = {
-            credits: 2500,
-            currentSector: 1,
+            credits: 500,
             currentPath: ['Drive C:', 'Downloads'],
-            selectedFileIds: new Set(),
+            selectedIds: new Set(),
             viewMode: 'grid',
-            searchFilter: '',
+            searchQuery: '',
             recycleBin: [],
             quarantineVault: [],
-            rules: [
-                { ifType: 'ext', val: 'png', action: 'Move to /Pictures' },
-                { ifType: 'ext', val: 'docx', action: 'Move to /Documents' }
-            ],
-            bots: {
-                imageBot: false,
-                docBot: false,
-                securityBot: false
-            },
-            fileSystem: {},
-            goals: [],
-            urgentGoal: null,
-            lastSelectedFileId: null
+            files: [],
+            executionShield: false,
+            autoSortBots: false,
+            bounty: null
         };
 
-        /* Sector Generator with Deep Hierarchies */
-        function generateSectorFiles(sectorId) {
-            const files = [];
-            const driveName = `Drive ${String.fromCharCode(67 + (sectorId - 1))}:`;
+        /* Seed initial file system */
+        function initFileSystem() {
+            state.files = [];
 
-            const addFile = (id, name, ext, sizeMB, parentFolder, isCorrupt = false, isVirus = false, virusType = null) => {
-                files.push({
-                    id: id || Math.random().toString(36).substr(2, 9),
-                    name, ext, size: parseFloat(sizeMB),
+            // Folders
+            const drives = ['Drive C:', 'Drive D:', 'Drive E:'];
+            drives.forEach(drive => {
+                state.files.push({ id: `folder_downloads_${drive}`, name: 'Downloads', isFolder: true, parent: drive });
+                state.files.push({ id: `folder_pictures_${drive}`, name: 'Pictures', isFolder: true, parent: drive });
+                state.files.push({ id: `folder_documents_${drive}`, name: 'Documents', isFolder: true, parent: drive });
+                state.files.push({ id: `folder_media_${drive}`, name: 'Media', isFolder: true, parent: drive });
+                state.files.push({ id: `folder_programs_${drive}`, name: 'Programs', isFolder: true, parent: drive });
+                state.files.push({ id: `folder_code_${drive}`, name: 'Code', isFolder: true, parent: drive });
+            });
+
+            // Populate messy initial files inside Drive C: / Downloads
+            MEANINGFUL_FILES.forEach((f, idx) => {
+                // Place most files in Downloads initially (making them misplaced!)
+                const parentFolder = (idx % 6 === 0) ? f.target : 'Downloads';
+                const parentDrive = 'Drive C:';
+
+                state.files.push({
+                    id: `file_${idx}_${Date.now()}`,
+                    name: f.name,
+                    ext: f.ext,
+                    target: f.target,
+                    isHazard: f.isHazard || false,
+                    isCorrupted: false,
                     parent: parentFolder,
-                    isCorrupt, isVirus, virusType,
-                    modified: new Date(Date.now() - Math.floor(Math.random() * 10000000000)).toLocaleDateString(),
-                    hash: Math.random().toString(36).substring(2, 10) + Math.random().toString(36).substring(2, 10)
+                    drive: parentDrive,
+                    size: (Math.random() * 8 + 0.5).toFixed(1)
                 });
-            };
-
-            // Standard Folder Architecture
-            ['Downloads', 'Pictures', 'Documents', 'Music', 'Archives', 'System_Logs'].forEach(f => {
-                files.push({ id: `${f.toLowerCase()}_folder`, name: f, isFolder: true, parent: driveName });
             });
 
-            // Sub-folders inside Documents
-            ['Work_Reports', 'Personal_Diaries', 'Tax_2026'].forEach(f => {
-                files.push({ id: `${f.toLowerCase()}_folder`, name: f, isFolder: true, parent: 'Documents' });
-            });
-
-            // Populate Chaos files based on Sector Difficulty
-            const fileCount = sectorId * 35;
-            const exts = ['png', 'jpg', 'pdf', 'docx', 'txt', 'mp3', 'wav', 'mp4', 'js', 'python', 'zip', 'tmp'];
-
-            for (let i = 1; i <= fileCount; i++) {
-                const ext = exts[Math.floor(Math.random() * exts.length)];
-                const parent = i % 5 === 0 ? 'Work_Reports' : 'Downloads';
-                addFile(`file_${sectorId}_${i}`, `Data_Blob_${100 + i}`, ext, (Math.random() * 12 + 0.5).toFixed(1), parent);
-            }
-
-            // Viruses & Ransomware Spawns
-            if (sectorId >= 3) {
-                for (let v = 1; v <= sectorId * 2; v++) {
-                    addFile(`worm_${v}`, `trojan_spore_v${v}`, 'worm', 24, 'Downloads', false, true, 'worm');
-                    addFile(`crypto_${v}`, `ransomware_vault_${v}`, 'crypto', 50, 'System_Logs', true, true, 'crypto');
-                }
-            }
-
-            return files;
-        }
-
-        function loadSectorGoals(sectorId) {
-            if (sectorId === 1) {
-                state.goals = [
-                    { text: 'Move all .png & .jpg files out of /Downloads', key: 'clean_images', done: false },
-                    { text: 'Delete all .tmp files in Sector C', key: 'clean_tmp', done: false },
-                    { text: 'Move .docx files to /Documents', key: 'clean_docs', done: false }
-                ];
-            } else if (sectorId >= 3) {
-                state.goals = [
-                    { text: 'Quarantine all .worm & .crypto virus threats', key: 'clean_viruses', done: false },
-                    { text: 'Clear all .tmp files from System Logs', key: 'clean_tmp', done: false }
-                ];
-            } else {
-                state.goals = [
-                    { text: 'Organize files into target sub-folders', key: 'general_sort', done: false }
-                ];
-            }
+            triggerVIPBounty();
         }
 
         /* ==========================================================================
-           3. UI RENDER ENGINE & COMPONENT BUILDER
+           4. CORRECTION CHECKING & HAZARD TIMERS
+           ========================================================================== */
+        function isFileCorrectlyPlaced(file) {
+            if (file.isFolder) return true;
+            if (file.target === 'Trash') return false; // Junk belongs in Trash Bin
+            return file.parent === file.target;
+        }
+
+        function checkHazardousExecutables() {
+            if (state.executionShield) {
+                document.getElementById('hazard-warning-banner').classList.add('hidden');
+                return;
+            }
+
+            // Find any .exe or .py files in wrong folders
+            const activeHazards = state.files.filter(f => !f.isFolder && f.isHazard && !isFileCorrectlyPlaced(f) && !f.isCorrupted);
+
+            const banner = document.getElementById('hazard-warning-banner');
+            if (activeHazards.length > 0) {
+                banner.classList.remove('hidden');
+                document.getElementById('hazard-countdown-badge').innerText = `${activeHazards.length} HAZARD(S) ACTIVE`;
+
+                // Chance to corrupt an unsafe executable each interval
+                activeHazards.forEach(hazard => {
+                    if (Math.random() < 0.22) { // 22% corruption check
+                        hazard.isCorrupted = true;
+                        hazard.name = `[CORRUPTED]_${hazard.name}`;
+                        audio.corrupt();
+                        showPopupAlert(`💥 CORRUPTION ALARM: Misplaced ${hazard.name}.${hazard.ext} exploded into corrupted data!`);
+                    }
+                });
+                renderExplorer();
+            } else {
+                banner.classList.add('hidden');
+            }
+        }
+
+        /* Interval Timer for Hazard check */
+        setInterval(checkHazardousExecutables, 2500);
+
+        /* ==========================================================================
+           5. UI RENDER ENGINE
            ========================================================================== */
         function renderExplorer() {
             const container = document.getElementById('file-container');
             container.innerHTML = '';
 
-            const currentParentName = state.currentPath[state.currentPath.length - 1];
-            let currentFiles = state.fileSystem[state.currentSector] || [];
+            const currentParent = state.currentPath[state.currentPath.length - 1];
+            let visibleFiles = state.files.filter(f => f.parent === currentParent);
 
-            let filesToDisplay = currentFiles.filter(f => f.parent === currentParentName);
-
-            if (state.searchFilter.trim() !== '') {
-                const query = state.searchFilter.toLowerCase();
-                filesToDisplay = currentFiles.filter(f => f.name.toLowerCase().includes(query) || f.ext?.toLowerCase().includes(query));
+            if (state.searchQuery.trim() !== '') {
+                const q = state.searchQuery.toLowerCase();
+                visibleFiles = state.files.filter(f => f.name.toLowerCase().includes(q) || f.ext?.toLowerCase().includes(q));
             }
 
-            // Sort Folders first, then files
-            filesToDisplay.sort((a, b) => (b.isFolder ? 1 : 0) - (a.isFolder ? 1 : 0));
+            // Sort Folders first
+            visibleFiles.sort((a, b) => (b.isFolder ? 1 : 0) - (a.isFolder ? 1 : 0));
 
             if (state.viewMode === 'grid') {
-                container.className = "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 gap-3 min-h-full content-start";
+                container.className = "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3.5 min-h-full content-start";
             } else {
-                container.className = "flex flex-col space-y-1 w-full";
+                container.className = "flex flex-col space-y-1.5 w-full";
             }
 
-            filesToDisplay.forEach(file => {
-                const isSelected = state.selectedFileIds.has(file.id);
+            visibleFiles.forEach(file => {
+                const isSelected = state.selectedIds.has(file.id);
+                const isCorrect = isFileCorrectlyPlaced(file);
                 const itemEl = document.createElement('div');
                 itemEl.dataset.id = file.id;
 
-                if (state.viewMode === 'grid') {
-                    itemEl.className = `p-3 rounded-xl border flex flex-col items-center justify-center cursor-pointer transition select-none relative shadow-sm ${
+                if (file.isFolder) {
+                    // FOLDER ROW / CARD (EASY 1-CLICK OPEN)
+                    itemEl.className = `p-3.5 rounded-xl border flex items-center gap-3 cursor-pointer transition select-none shadow-sm ${
                         isSelected 
-                            ? 'bg-blue-600/25 border-blue-500 text-blue-300 ring-2 ring-blue-500/40' 
-                            : 'bg-slate-950/80 border-slate-800 hover:border-slate-700 hover:bg-slate-900'
-                    } ${file.isCorrupt || file.isVirus ? 'corrupted-glitch border-red-500/60' : ''}`;
-
-                    const iconInfo = file.isFolder 
-                        ? { icon: 'fa-folder text-amber-400' } 
-                        : (FILE_TYPES[file.ext] || { icon: 'fa-file text-slate-400' });
-
-                    itemEl.innerHTML = `
-                        <div class="text-4xl my-1"><i class="fa-solid ${iconInfo.icon}"></i></div>
-                        <span class="text-xs font-semibold text-center truncate w-full mt-1 text-slate-200">${file.name}${file.ext ? '.' + file.ext : ''}</span>
-                        <span class="text-[10px] text-slate-400 font-mono mt-0.5">${file.isFolder ? 'Folder' : file.size + ' MB'}</span>
-                        ${file.isVirus ? `<span class="absolute top-1.5 right-1.5 text-[8px] bg-red-600 text-white font-extrabold px-1 py-0.2 rounded shadow">${file.virusType?.toUpperCase()}</span>` : ''}
-                    `;
-                } else {
-                    itemEl.className = `px-3 py-2 rounded-lg border flex items-center justify-between cursor-pointer transition text-xs ${
-                        isSelected 
-                            ? 'bg-blue-600/25 border-blue-500 text-blue-300' 
-                            : 'bg-slate-950/80 border-slate-800 hover:border-slate-700'
+                            ? 'bg-blue-600/30 border-blue-500 text-blue-200 ring-2 ring-blue-500/50' 
+                            : 'bg-slate-900 border-slate-800 hover:border-blue-500/50 hover:bg-slate-800/80'
                     }`;
 
-                    const iconInfo = file.isFolder 
-                        ? { icon: 'fa-folder text-amber-400' } 
-                        : (FILE_TYPES[file.ext] || { icon: 'fa-file text-slate-400' });
-
                     itemEl.innerHTML = `
-                        <div class="flex items-center gap-3 flex-1 truncate">
-                            <i class="fa-solid ${iconInfo.icon} text-base"></i>
-                            <span class="font-semibold text-slate-200 truncate">${file.name}${file.ext ? '.' + file.ext : ''}</span>
+                        <i class="fa-solid fa-folder text-2xl text-amber-400"></i>
+                        <div class="flex-1 truncate">
+                            <div class="font-bold text-xs text-slate-100 truncate">${file.name}</div>
+                            <div class="text-[10px] text-slate-400 font-mono">Folder</div>
                         </div>
-                        <div class="w-24 text-slate-400 font-mono text-[11px]">${file.isFolder ? 'Folder' : file.size + ' MB'}</div>
-                        <div class="w-28 text-slate-500 text-[11px] font-mono">${file.modified || 'Today'}</div>
+                        <i class="fa-solid fa-chevron-right text-slate-600 text-xs"></i>
                     `;
-                }
 
-                // Event Listeners
-                itemEl.onclick = (e) => handleFileClick(e, file);
-                itemEl.ondblclick = () => handleFileDoubleClick(file);
-                itemEl.oncontextmenu = (e) => handleContextMenu(e, file);
+                    // Single-click folder navigation
+                    itemEl.onclick = (e) => {
+                        e.stopPropagation();
+                        openFolder(file.name);
+                    };
 
-                itemEl.draggable = true;
-                itemEl.ondragstart = (e) => handleDragStart(e, file);
+                    itemEl.ondragover = (e) => {
+                        e.preventDefault();
+                        itemEl.classList.add('drag-over-folder');
+                    };
+                    itemEl.ondragleave = () => itemEl.classList.remove('drag-over-folder');
+                    itemEl.ondrop = (e) => handleFolderDrop(e, file.name);
 
-                if (file.isFolder) {
-                    itemEl.ondragover = (e) => e.preventDefault();
-                    itemEl.ondrop = (e) => handleFolderDrop(e, file);
+                } else {
+                    // FILE CARD WITH STATUS CHECKMARK / CROSS
+                    const iconClass = (TARGET_FOLDERS[file.target]?.icon) || 'fa-file text-slate-400';
+
+                    if (state.viewMode === 'grid') {
+                        itemEl.className = `p-3 rounded-xl border flex flex-col items-center justify-between cursor-pointer transition select-none relative shadow-md ${
+                            file.isCorrupted ? 'corrupted-item' : (
+                                isSelected 
+                                    ? 'bg-blue-600/25 border-blue-500 text-blue-200 ring-2 ring-blue-500/40' 
+                                    : 'bg-slate-950/90 border-slate-800 hover:border-slate-700 hover:bg-slate-900'
+                            )
+                        }`;
+
+                        itemEl.innerHTML = `
+                            <!-- Status Indicator Badge (Checkmark or Cross) -->
+                            <div class="absolute top-2 right-2 text-sm font-extrabold" title="${isCorrect ? 'Correctly Sorted!' : 'Belongs in ' + file.target}">
+                                ${isCorrect 
+                                    ? '<span class="text-emerald-400 bg-emerald-950 border border-emerald-500/40 px-1.5 py-0.5 rounded-full shadow"><i class="fa-solid fa-check"></i></span>' 
+                                    : '<span class="text-rose-400 bg-rose-950 border border-rose-500/40 px-1.5 py-0.5 rounded-full shadow"><i class="fa-solid fa-xmark"></i></span>'
+                                }
+                            </div>
+
+                            <div class="text-3xl my-2"><i class="fa-solid ${iconClass}"></i></div>
+
+                            <div class="w-full text-center">
+                                <div class="text-xs font-bold truncate text-slate-200">${file.name}.${file.ext}</div>
+                                <div class="text-[10px] font-mono text-slate-400 mt-0.5">${file.size} MB</div>
+                            </div>
+                        `;
+                    } else {
+                        // LIST VIEW
+                        itemEl.className = `px-3.5 py-2 rounded-lg border flex items-center justify-between cursor-pointer transition text-xs ${
+                            file.isCorrupted ? 'corrupted-item' : (
+                                isSelected ? 'bg-blue-600/30 border-blue-500 text-blue-200' : 'bg-slate-950/90 border-slate-800 hover:border-slate-700'
+                            )
+                        }`;
+
+                        itemEl.innerHTML = `
+                            <div class="flex items-center gap-3 flex-1 truncate">
+                                <i class="fa-solid ${iconClass} text-lg"></i>
+                                <span class="font-bold text-slate-200 truncate">${file.name}.${file.ext}</span>
+                            </div>
+                            <div class="w-24 font-mono text-slate-400">${file.size} MB</div>
+                            <div class="w-28 text-right">
+                                ${isCorrect 
+                                    ? '<span class="text-emerald-400 font-bold flex items-center gap-1 justify-end"><i class="fa-solid fa-circle-check"></i> Correct</span>' 
+                                    : `<span class="text-rose-400 font-bold flex items-center gap-1 justify-end" title="Move to /${file.target}"><i class="fa-solid fa-circle-xmark"></i> Target: /${file.target}</span>`
+                                }
+                            </div>
+                        `;
+                    }
+
+                    itemEl.onclick = (e) => handleFileClick(e, file);
+                    itemEl.oncontextmenu = (e) => handleContextMenu(e, file);
+
+                    itemEl.draggable = true;
+                    itemEl.ondragstart = (e) => handleDragStart(e, file);
                 }
 
                 container.appendChild(itemEl);
             });
 
             renderBreadcrumbs();
-            renderDriveTree();
-            updateStatusBar();
-            checkSectorObjectives();
+            renderSidebarTrees();
+            updateGlobalProgress();
+        }
+
+        function openFolder(folderName) {
+            audio.openFolder();
+            state.currentPath.push(folderName);
+            state.selectedIds.clear();
+            renderExplorer();
         }
 
         function renderBreadcrumbs() {
-            const bc = document.getElementById('breadcrumbs');
-            bc.innerHTML = '';
+            const bar = document.getElementById('breadcrumb-bar');
+            bar.innerHTML = '';
             state.currentPath.forEach((folder, idx) => {
                 const btn = document.createElement('button');
-                btn.className = "hover:text-blue-400 font-semibold transition flex items-center gap-1 text-slate-300";
-                btn.innerHTML = `${idx === 0 ? '<i class="fa-solid fa-hard-drive text-amber-500"></i>' : '<i class="fa-solid fa-angle-right text-slate-600 text-[10px]"></i>'} ${folder}`;
+                btn.className = "hover:text-blue-400 font-bold transition flex items-center gap-1.5 text-slate-200";
+                btn.innerHTML = `${idx === 0 ? '<i class="fa-solid fa-hard-drive text-amber-400"></i>' : '<i class="fa-solid fa-angle-right text-slate-600 text-[10px]"></i>'} ${folder}`;
                 btn.onclick = () => {
                     state.currentPath = state.currentPath.slice(0, idx + 1);
                     renderExplorer();
                 };
-                bc.appendChild(btn);
+                bar.appendChild(btn);
             });
         }
 
-        function renderDriveTree() {
-            const root = document.getElementById('drive-tree-root');
-            root.innerHTML = '';
-            for (let i = 1; i <= 6; i++) {
-                const driveLetter = `Drive ${String.fromCharCode(66 + i)}:`;
-                const isCurrent = state.currentPath[0] === driveLetter;
+        function renderSidebarTrees() {
+            // System Drives
+            const driveList = document.getElementById('drive-selector-list');
+            driveList.innerHTML = '';
+            ['Drive C:', 'Drive D:', 'Drive E:'].forEach(drv => {
+                const isCurrent = state.currentPath[0] === drv;
                 const div = document.createElement('div');
-                div.className = `p-2 rounded-lg flex items-center gap-2 cursor-pointer transition ${isCurrent ? 'bg-blue-600 text-white font-bold shadow-sm' : 'hover:bg-slate-900 text-slate-400'}`;
-                div.innerHTML = `<i class="fa-solid fa-hard-drive ${isCurrent ? 'text-amber-400' : ''}"></i> <span>${driveLetter}</span>`;
+                div.className = `p-2 rounded-xl flex items-center gap-2 cursor-pointer transition text-xs ${isCurrent ? 'bg-blue-600 text-white font-bold shadow' : 'hover:bg-slate-900 text-slate-400'}`;
+                div.innerHTML = `<i class="fa-solid fa-hard-drive ${isCurrent ? 'text-amber-400' : ''}"></i> <span>${drv}</span>`;
                 div.onclick = () => {
-                    state.currentSector = i;
-                    document.getElementById('level-select').value = i;
-                    state.currentPath = [driveLetter];
-                    loadSectorGoals(i);
+                    state.currentPath = [drv];
                     renderExplorer();
                 };
-                root.appendChild(div);
-            }
+                driveList.appendChild(div);
+            });
+
+            // Always-Expanded Target Folders Tree
+            const tree = document.getElementById('target-folder-tree');
+            tree.innerHTML = '';
+            Object.keys(TARGET_FOLDERS).forEach(targetName => {
+                const info = TARGET_FOLDERS[targetName];
+                const div = document.createElement('div');
+                div.className = "p-2 rounded-xl border border-slate-800 bg-slate-900/60 hover:bg-slate-800 hover:border-blue-500/50 flex items-center justify-between cursor-pointer transition text-slate-300";
+                div.innerHTML = `
+                    <span class="flex items-center gap-2 font-semibold">
+                        <i class="fa-solid fa-folder text-amber-400 text-sm"></i> /${targetName}
+                    </span>
+                    <span class="text-[9px] text-slate-500 font-mono">${info.drive}</span>
+                `;
+
+                div.onclick = () => openFolder(targetName);
+
+                // Allow Sidebar Drag & Drop target
+                div.ondragover = (e) => {
+                    e.preventDefault();
+                    div.classList.add('drag-over-folder');
+                };
+                div.ondragleave = () => div.classList.remove('drag-over-folder');
+                div.ondrop = (e) => handleFolderDrop(e, targetName);
+
+                tree.appendChild(div);
+            });
         }
 
-        /* Rich File Previewer */
-        function renderPreviewPane() {
-            const emptyPane = document.getElementById('preview-content-empty');
-            const previewContent = document.getElementById('preview-content');
+        function updateGlobalProgress() {
+            const nonFolders = state.files.filter(f => !f.isFolder);
+            const correctCount = nonFolders.filter(f => isFileCorrectlyPlaced(f)).length;
+            const total = nonFolders.length;
+            const pct = total === 0 ? 100 : Math.round((correctCount / total) * 100);
 
-            if (state.selectedFileIds.size !== 1) {
-                emptyPane.classList.remove('hidden');
-                previewContent.classList.add('hidden');
-                return;
-            }
+            const bar = document.getElementById('global-progress-bar');
+            bar.style.width = `${pct}%`;
+            document.getElementById('global-progress-text').innerText = `${correctCount} / ${total} (${pct}%)`;
 
-            const fileId = Array.from(state.selectedFileIds)[0];
-            const currentFiles = state.fileSystem[state.currentSector] || [];
-            const file = currentFiles.find(f => f.id === fileId);
-
-            if (!file) return;
-
-            emptyPane.classList.add('hidden');
-            previewContent.classList.remove('hidden');
-
-            const iconInfo = file.isFolder 
-                ? { icon: 'fa-folder text-amber-400' } 
-                : (FILE_TYPES[file.ext] || { icon: 'fa-file text-slate-400' });
-
-            document.getElementById('preview-icon').innerHTML = `<i class="fa-solid ${iconInfo.icon}"></i>`;
-            document.getElementById('preview-filename').innerText = file.name + (file.ext ? '.' + file.ext : '');
-            document.getElementById('preview-filetype').innerText = file.isFolder ? 'SYSTEM FOLDER' : `${file.ext.toUpperCase()} DATA FILE`;
-            document.getElementById('meta-size').innerText = file.isFolder ? '--' : file.size + ' MB';
-            document.getElementById('meta-date').innerText = file.modified || '2026-10-23';
-            document.getElementById('meta-status').innerText = file.isVirus ? 'DANGEROUS VIRUS' : (file.isCorrupt ? 'CORRUPTED' : 'HEALTHY');
-            document.getElementById('meta-status').className = `font-bold ${file.isVirus ? 'text-red-500' : 'text-emerald-400'}`;
-            document.getElementById('meta-hash').innerText = file.hash || '8f12a39b0d';
-
-            const visualBox = document.getElementById('preview-visual-box');
-            visualBox.innerHTML = '';
-
-            // Canvas & Rich Previews
-            if (FILE_TYPES[file.ext]?.cat === 'image') {
-                visualBox.innerHTML = `<canvas id="preview-canvas" class="w-full h-full rounded bg-slate-950 border border-slate-800"></canvas>`;
-                setTimeout(() => drawProceduralPixelArt('preview-canvas'), 20);
-            } else if (FILE_TYPES[file.ext]?.cat === 'audio') {
-                visualBox.innerHTML = `
-                    <div class="flex flex-col items-center justify-center space-y-2 w-full">
-                        <i class="fa-solid fa-waveform text-amber-400 text-3xl animate-pulse"></i>
-                        <button id="btn-play-synth" class="px-3 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded flex items-center gap-1.5 text-xs"><i class="fa-solid fa-play"></i> Play Synth Melody</button>
-                    </div>`;
-                setTimeout(() => {
-                    const btn = document.getElementById('btn-play-synth');
-                    if (btn) btn.onclick = () => audio.playMelody();
-                }, 20);
-            } else if (FILE_TYPES[file.ext]?.cat === 'doc') {
-                visualBox.innerHTML = `<div class="p-2 font-mono text-[10px] text-slate-300 bg-slate-950 w-full h-full rounded overflow-y-auto leading-relaxed">
-[2026 LOG DETECTED]: Sector file verified.
-- Status: Unencrypted
-- Content: Confidential document contents...</div>`;
-            } else {
-                visualBox.innerHTML = `<pre class="font-mono text-[9px] text-green-400 bg-slate-950 p-2 w-full h-full overflow-hidden">00000000  7f 45 4c 46 02 01 01 00  |.ELF....|
-00000100  02 00 3e 00 01 00 00 00  |..>.....|</pre>`;
-            }
-
-            document.getElementById('btn-preview-delete').onclick = () => moveSelectedToBin();
-            document.getElementById('btn-preview-quarantine').onclick = () => moveSelectedToQuarantine();
-        }
-
-        function drawProceduralPixelArt(canvasId) {
-            const canvas = document.getElementById(canvasId);
-            if (!canvas) return;
-            const ctx = canvas.getContext('2d');
-            canvas.width = 120; canvas.height = 90;
-
-            ctx.fillStyle = '#0f172a';
-            ctx.fillRect(0, 0, 120, 90);
-
-            // Draw procedural geometric pixel artwork
-            for (let x = 0; x < 120; x += 10) {
-                for (let y = 0; y < 90; y += 10) {
-                    if ((x + y) % 20 === 0) {
-                        ctx.fillStyle = `hsl(${Math.random() * 360}, 70%, 50%)`;
-                        ctx.fillRect(x, y, 10, 10);
-                    }
-                }
-            }
-        }
-
-        function updateStatusBar() {
-            const currentFiles = state.fileSystem[state.currentSector] || [];
-            const currentParentName = state.currentPath[state.currentPath.length - 1];
-            const folderFiles = currentFiles.filter(f => f.parent === currentParentName);
-
-            document.getElementById('status-selection-count').innerText = `${state.selectedFileIds.size} items selected`;
-            document.getElementById('status-total-count').innerText = `Total: ${folderFiles.length} files`;
-
-            const totalSize = currentFiles.reduce((acc, f) => acc + (parseFloat(f.size) || 0), 0);
-            const usedPct = Math.min(100, Math.round((totalSize / 1200) * 100));
-
-            const gaugeBar = document.getElementById('drive-gauge-bar');
-            gaugeBar.style.width = `${usedPct}%`;
-            gaugeBar.className = `h-full transition-all duration-500 ${usedPct > 85 ? 'bg-red-500' : (usedPct > 65 ? 'bg-amber-500' : 'bg-blue-500')}`;
-            document.getElementById('drive-gauge-text').innerText = `${usedPct}%`;
-
+            document.getElementById('status-selected').innerText = `${state.selectedIds.size} files selected`;
             document.getElementById('player-credits').innerText = state.credits.toLocaleString();
         }
 
         /* ==========================================================================
-           4. SECTOR OBJECTIVES & DYNAMIC URGENT BOUNTIES
-           ========================================================================== */
-        function checkSectorObjectives() {
-            const currentFiles = state.fileSystem[state.currentSector] || [];
-            let doneCount = 0;
-
-            state.goals.forEach(goal => {
-                if (goal.key === 'clean_images') {
-                    const imgInDownloads = currentFiles.some(f => (f.ext === 'png' || f.ext === 'jpg') && f.parent === 'Downloads');
-                    goal.done = !imgInDownloads;
-                } else if (goal.key === 'clean_tmp') {
-                    const tmpExists = currentFiles.some(f => f.ext === 'tmp');
-                    goal.done = !tmpExists;
-                } else if (goal.key === 'clean_docs') {
-                    const docxInDownloads = currentFiles.some(f => f.ext === 'docx' && f.parent === 'Downloads');
-                    goal.done = !docxInDownloads;
-                } else if (goal.key === 'clean_viruses') {
-                    const virusExists = currentFiles.some(f => f.isVirus);
-                    goal.done = !virusExists;
-                }
-                if (goal.done) doneCount++;
-            });
-
-            const goalsList = document.getElementById('goals-list');
-            goalsList.innerHTML = '';
-            state.goals.forEach(g => {
-                const li = document.createElement('li');
-                li.className = "flex items-center gap-1.5";
-                li.innerHTML = `<i class="fa-solid ${g.done ? 'fa-circle-check text-emerald-400' : 'fa-circle text-slate-700'} text-[10px]"></i> <span class="${g.done ? 'line-through text-slate-500' : 'text-slate-300'}">${g.text}</span>`;
-                goalsList.appendChild(li);
-            });
-
-            const pct = Math.round((doneCount / (state.goals.length || 1)) * 100);
-            document.getElementById('goals-percent').innerText = `${pct}%`;
-
-            if (pct === 100 && !state.goals.awarded) {
-                state.goals.awarded = true;
-                audio.success();
-                state.credits += 800;
-                alert('🎉 SECTOR FULLY CLEARED! +800 Bytes Earned!');
-                updateStatusBar();
-            }
-        }
-
-        /* ==========================================================================
-           5. INTERACTION & FILE MANAGEMENT HANDLERS
+           6. FILE DRAG / DROP & BATCH ACTIONS
            ========================================================================== */
         function handleFileClick(e, file) {
             audio.click();
             if (e.ctrlKey || e.metaKey) {
-                if (state.selectedFileIds.has(file.id)) state.selectedFileIds.delete(file.id);
-                else state.selectedFileIds.add(file.id);
+                if (state.selectedIds.has(file.id)) state.selectedIds.delete(file.id);
+                else state.selectedIds.add(file.id);
             } else {
-                state.selectedFileIds.clear();
-                state.selectedFileIds.add(file.id);
+                state.selectedIds.clear();
+                state.selectedIds.add(file.id);
             }
-            state.lastSelectedFileId = file.id;
             renderExplorer();
-            renderPreviewPane();
         }
 
-        function handleFileDoubleClick(file) {
-            if (file.isFolder) {
-                state.currentPath.push(file.name);
-                state.selectedFileIds.clear();
+        function handleDragStart(e, file) {
+            if (!state.selectedIds.has(file.id)) {
+                state.selectedIds.clear();
+                state.selectedIds.add(file.id);
                 renderExplorer();
-                renderPreviewPane();
             }
+            e.dataTransfer.setData('text/plain', JSON.stringify(Array.from(state.selectedIds)));
+        }
+
+        function handleFolderDrop(e, targetFolderName) {
+            e.preventDefault();
+            const raw = e.dataTransfer.getData('text/plain');
+            if (!raw) return;
+            const movedIds = JSON.parse(raw);
+
+            let awardCredits = 0;
+            state.files.forEach(f => {
+                if (movedIds.includes(f.id) && !f.isFolder) {
+                    f.parent = targetFolderName;
+                    if (f.target === targetFolderName) {
+                        awardCredits += 50; // Award 50 bytes for correct sorting!
+                    }
+                }
+            });
+
+            if (awardCredits > 0) {
+                state.credits += awardCredits;
+                audio.correct();
+                showPopupAlert(`🎉 PERFECT SORT! +${awardCredits} Bytes Earned!`);
+            } else {
+                audio.drop();
+            }
+
+            state.selectedIds.clear();
+            checkBountyCompletion();
+            renderExplorer();
         }
 
         function handleContextMenu(e, file) {
             e.preventDefault();
-            if (!state.selectedFileIds.has(file.id)) {
-                state.selectedFileIds.clear();
-                state.selectedFileIds.add(file.id);
+            if (!state.selectedIds.has(file.id)) {
+                state.selectedIds.clear();
+                state.selectedIds.add(file.id);
                 renderExplorer();
             }
             const menu = document.getElementById('context-menu');
@@ -890,317 +746,184 @@
             menu.classList.remove('hidden');
         }
 
-        function handleDragStart(e, file) {
-            if (!state.selectedFileIds.has(file.id)) {
-                state.selectedFileIds.clear();
-                state.selectedFileIds.add(file.id);
-                renderExplorer();
-            }
-            e.dataTransfer.setData('text/plain', JSON.stringify(Array.from(state.selectedFileIds)));
-        }
-
-        function handleFolderDrop(e, targetFolder) {
-            e.preventDefault();
-            const raw = e.dataTransfer.getData('text/plain');
-            if (!raw) return;
-            const fileIds = JSON.parse(raw);
-
-            const currentFiles = state.fileSystem[state.currentSector] || [];
-            currentFiles.forEach(f => {
-                if (fileIds.includes(f.id) && f.id !== targetFolder.id) {
-                    f.parent = targetFolder.name;
-                }
-            });
-
-            audio.select();
-            state.selectedFileIds.clear();
+        function selectAllMisplaced() {
+            state.selectedIds.clear();
+            const currentParent = state.currentPath[state.currentPath.length - 1];
+            state.files.filter(f => f.parent === currentParent && !f.isFolder && !isFileCorrectlyPlaced(f))
+                       .forEach(f => state.selectedIds.add(f.id));
             renderExplorer();
         }
 
-        function moveSelectedToBin() {
-            const currentFiles = state.fileSystem[state.currentSector] || [];
-            state.fileSystem[state.currentSector] = currentFiles.filter(f => {
-                if (state.selectedFileIds.has(f.id)) {
-                    state.recycleBin.push(f);
-                    return false;
+        function autoSortSafeFiles() {
+            let sortedCount = 0;
+            const currentParent = state.currentPath[state.currentPath.length - 1];
+            state.files.forEach(f => {
+                if (f.parent === currentParent && !f.isFolder && !f.isHazard && !f.isCorrupted) {
+                    f.parent = f.target;
+                    sortedCount++;
                 }
-                return true;
             });
-            audio.trash();
-            state.selectedFileIds.clear();
-            document.getElementById('trash-count-badge').innerText = state.recycleBin.length;
+            audio.correct();
+            showPopupAlert(`✨ Auto-Sorted ${sortedCount} safe files into target folders!`);
             renderExplorer();
-            renderPreviewPane();
-        }
-
-        function moveSelectedToQuarantine() {
-            const currentFiles = state.fileSystem[state.currentSector] || [];
-            state.fileSystem[state.currentSector] = currentFiles.filter(f => {
-                if (state.selectedFileIds.has(f.id)) {
-                    state.quarantineVault.push(f);
-                    return false;
-                }
-                return true;
-            });
-            audio.select();
-            state.selectedFileIds.clear();
-            document.getElementById('quarantine-count-badge').innerText = state.quarantineVault.length;
-            renderExplorer();
-            renderPreviewPane();
         }
 
         /* ==========================================================================
-           6. BATCH ACTIONS & VIRUS SPREADING ENGINE
+           7. VIP BOUNTIES & SHOP UPGRADES
            ========================================================================== */
-        function executeBatchMove(category, targetFolder) {
-            const currentFiles = state.fileSystem[state.currentSector] || [];
-            let count = 0;
+        function triggerVIPBounty() {
+            state.bounty = {
+                desc: 'Move 4 misplaced Python (.py) scripts to /Code',
+                target: 'Code',
+                ext: 'py',
+                time: 35,
+                reward: 350
+            };
 
-            currentFiles.forEach(f => {
-                if (!f.isFolder && FILE_TYPES[f.ext]?.cat === category && f.parent !== targetFolder) {
-                    f.parent = targetFolder;
-                    count++;
+            const card = document.getElementById('urgent-bounty-card');
+            card.classList.remove('hidden');
+            document.getElementById('bounty-description').innerText = state.bounty.desc;
+
+            const timerEl = document.getElementById('bounty-timer');
+            const interval = setInterval(() => {
+                if (!state.bounty) { clearInterval(interval); return; }
+                state.bounty.time--;
+                timerEl.innerText = `${state.bounty.time}s`;
+
+                if (state.bounty.time <= 0) {
+                    clearInterval(interval);
+                    card.classList.add('hidden');
+                    state.bounty = null;
                 }
-            });
-
-            audio.success();
-            alert(`⚡ Batch Utility: Re-routed ${count} ${category.toUpperCase()} files into /${targetFolder}`);
-            renderExplorer();
+            }, 1000);
         }
 
-        function purgeJunkFiles() {
-            const currentFiles = state.fileSystem[state.currentSector] || [];
-            let count = 0;
-
-            state.fileSystem[state.currentSector] = currentFiles.filter(f => {
-                if (f.ext === 'tmp') {
-                    state.recycleBin.push(f);
-                    count++;
-                    return false;
-                }
-                return true;
-            });
-
-            audio.trash();
-            document.getElementById('trash-count-badge').innerText = state.recycleBin.length;
-            alert(`🧹 Purged ${count} temporary .tmp files to Recycle Bin.`);
-            renderExplorer();
+        function checkBountyCompletion() {
+            if (!state.bounty) return;
+            const correctPyCount = state.files.filter(f => f.ext === state.bounty.ext && f.parent === state.bounty.target).length;
+            if (correctPyCount >= 4) {
+                state.credits += state.bounty.reward;
+                audio.correct();
+                showPopupAlert(`🏆 VIP BOUNTY COMPLETED! +${state.bounty.reward} Bytes Bonus!`);
+                document.getElementById('urgent-bounty-card').classList.add('hidden');
+                state.bounty = null;
+            }
         }
-
-        /* Dynamic Virus Infection Interval */
-        setInterval(() => {
-            const currentFiles = state.fileSystem[state.currentSector] || [];
-            const viruses = currentFiles.filter(f => f.isVirus);
-
-            if (viruses.length > 0) {
-                // Ransomware encrypts nearby files
-                const targets = currentFiles.filter(f => !f.isVirus && !f.isFolder);
-                if (targets.length > 0) {
-                    const victim = targets[Math.floor(Math.random() * targets.length)];
-                    victim.isCorrupt = true;
-                    victim.name = `[ENCRYPTED]_` + victim.name;
-                    audio.virus();
-                    renderExplorer();
-                }
-            }
-        }, 8000);
-
-        /* Auto-Sort Bots Interval */
-        setInterval(() => {
-            if (state.bots.imageBot) executeBatchMove('image', 'Pictures');
-            if (state.bots.docBot) executeBatchMove('doc', 'Documents');
-        }, 12000);
-
-        /* ==========================================================================
-           7. INITIALIZATION & GLOBAL HOTKEYS
-           ========================================================================== */
-        window.addEventListener('DOMContentLoaded', () => {
-            for (let s = 1; s <= 6; s++) {
-                state.fileSystem[s] = generateSectorFiles(s);
-            }
-
-            loadSectorGoals(1);
-            renderExplorer();
-
-            // Keyboard Shortcuts
-            window.addEventListener('keydown', (e) => {
-                if (e.target.tagName === 'INPUT') return;
-
-                if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a') {
-                    e.preventDefault();
-                    const currentFiles = state.fileSystem[state.currentSector] || [];
-                    const currentParentName = state.currentPath[state.currentPath.length - 1];
-                    currentFiles.filter(f => f.parent === currentParentName).forEach(f => state.selectedFileIds.add(f.id));
-                    renderExplorer();
-                } else if (e.key === 'Delete') {
-                    moveSelectedToBin();
-                } else if (e.key === 'F2' && state.lastSelectedFileId) {
-                    const currentFiles = state.fileSystem[state.currentSector] || [];
-                    const file = currentFiles.find(f => f.id === state.lastSelectedFileId);
-                    if (file) {
-                        const newName = prompt('Enter new filename:', file.name);
-                        if (newName) {
-                            file.name = newName;
-                            renderExplorer();
-                        }
-                    }
-                }
-            });
-
-            // Context Menu Dismissal
-            window.addEventListener('click', () => {
-                document.getElementById('context-menu').classList.add('hidden');
-            });
-
-            // Search Bar Input
-            document.getElementById('search-input').oninput = (e) => {
-                state.searchFilter = e.target.value;
-                renderExplorer();
-            };
-
-            // Level Selector Change
-            document.getElementById('level-select').onchange = (e) => {
-                const sec = parseInt(e.target.value);
-                state.currentSector = sec;
-                const driveLetter = `Drive ${String.fromCharCode(66 + sec)}:`;
-                state.currentPath = [driveLetter];
-                loadSectorGoals(sec);
-                renderExplorer();
-            };
-
-            // Theme Switcher
-            document.getElementById('theme-select').onchange = (e) => {
-                document.body.className = `dark bg-osDark text-slate-100 font-sans h-screen overflow-hidden no-select antialiased flex flex-col theme-${e.target.value}`;
-            };
-
-            // Audio Toggle
-            document.getElementById('toggle-audio').onclick = () => {
-                audio.enabled = !audio.enabled;
-                document.getElementById('audio-icon').className = audio.enabled ? "fa-solid fa-volume-high" : "fa-solid fa-volume-xmark text-red-400";
-            };
-
-            // View Mode Buttons
-            document.getElementById('view-grid-btn').onclick = () => {
-                state.viewMode = 'grid';
-                document.getElementById('view-grid-btn').className = "p-1 px-2.5 bg-blue-600 text-white";
-                document.getElementById('view-list-btn').className = "p-1 px-2.5 text-slate-400 hover:text-slate-200";
-                renderExplorer();
-            };
-            document.getElementById('view-list-btn').onclick = () => {
-                state.viewMode = 'list';
-                document.getElementById('view-list-btn').className = "p-1 px-2.5 bg-blue-600 text-white";
-                document.getElementById('view-grid-btn').className = "p-1 px-2.5 text-slate-400 hover:text-slate-200";
-                renderExplorer();
-            };
-
-            // Batch Buttons
-            document.getElementById('batch-move-img').onclick = () => executeBatchMove('image', 'Pictures');
-            document.getElementById('batch-move-docs').onclick = () => executeBatchMove('doc', 'Documents');
-            document.getElementById('batch-clean-junk').onclick = () => purgeJunkFiles();
-            document.getElementById('batch-auto-sort').onclick = () => {
-                executeBatchMove('image', 'Pictures');
-                executeBatchMove('doc', 'Documents');
-                purgeJunkFiles();
-            };
-            document.getElementById('batch-antivirus').onclick = () => moveSelectedToQuarantine();
-
-            // Modals Trigger
-            document.getElementById('menu-btn-shop').onclick = () => {
-                renderShopModal();
-                document.getElementById('modal-shop').classList.remove('hidden');
-            };
-            document.getElementById('menu-btn-rules').onclick = () => {
-                renderRulesList();
-                document.getElementById('modal-rules').classList.remove('hidden');
-            };
-            document.getElementById('menu-btn-spawner').onclick = () => {
-                document.getElementById('modal-spawner').classList.remove('hidden');
-            };
-
-            document.querySelectorAll('.close-modal').forEach(btn => {
-                btn.onclick = () => {
-                    document.querySelectorAll('[id^="modal-"]').forEach(m => m.classList.add('hidden'));
-                };
-            });
-
-            // Spawner Action
-            document.getElementById('btn-spawn-files').onclick = () => {
-                const count = parseInt(document.getElementById('spawn-count').value) || 50;
-                const currentFiles = state.fileSystem[state.currentSector] || [];
-                const exts = ['png', 'jpg', 'docx', 'pdf', 'mp3', 'tmp'];
-
-                for (let i = 1; i <= count; i++) {
-                    const ext = exts[Math.floor(Math.random() * exts.length)];
-                    currentFiles.push({
-                        id: 'chaos_' + Math.random().toString(36).substr(2, 8),
-                        name: `Chaos_Generated_${i}`,
-                        ext, size: (Math.random() * 15 + 1).toFixed(1),
-                        parent: 'Downloads',
-                        modified: 'Just now'
-                    });
-                }
-
-                document.getElementById('modal-spawner').classList.add('hidden');
-                audio.success();
-                renderExplorer();
-            };
-
-            // Rules Modal Events
-            document.getElementById('btn-add-rule').onclick = () => {
-                const type = document.getElementById('rule-if-type').value;
-                const val = document.getElementById('rule-val').value;
-                const act = document.getElementById('rule-action').value;
-                if (val) {
-                    state.rules.push({ ifType: type, val, action: act });
-                    renderRulesList();
-                }
-            };
-        });
 
         function renderShopModal() {
-            document.getElementById('shop-bytes-val').innerText = state.credits.toLocaleString();
-            const grid = document.getElementById('shop-items-grid');
-            grid.innerHTML = `
+            document.getElementById('shop-balance-display').innerText = state.credits.toLocaleString();
+            const container = document.getElementById('shop-items-container');
+            container.innerHTML = `
                 <div class="p-3 bg-slate-950 rounded-xl border border-slate-800 flex justify-between items-center">
                     <div>
-                        <div class="font-bold text-slate-200">Image Sorting Bot</div>
-                        <div class="text-[10px] text-slate-400">Automatically routes images to /Pictures</div>
+                        <div class="font-bold text-slate-200">Execution Shield v1.0</div>
+                        <div class="text-[11px] text-slate-400">Completely prevents misplaced .exe and .py files from corrupting.</div>
                     </div>
-                    <button class="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg" onclick="buyBot('imageBot', 600)">600 B</button>
-                </div>
-                <div class="p-3 bg-slate-950 rounded-xl border border-slate-800 flex justify-between items-center">
-                    <div>
-                        <div class="font-bold text-slate-200">Document Sorting Bot</div>
-                        <div class="text-[10px] text-slate-400">Routes .docx & .pdf files to /Documents</div>
-                    </div>
-                    <button class="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg" onclick="buyBot('docBot', 800)">800 B</button>
+                    <button class="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold rounded-xl" onclick="buyShield()">400 B</button>
                 </div>
             `;
         }
 
-        function buyBot(botType, price) {
-            if (state.credits >= price && !state.bots[botType]) {
-                state.credits -= price;
-                state.bots[botType] = true;
-                let activeCount = Object.values(state.bots).filter(Boolean).length;
-                document.getElementById('active-bots-count').innerText = activeCount;
-                audio.success();
+        function buyShield() {
+            if (state.credits >= 400 && !state.executionShield) {
+                state.credits -= 400;
+                state.executionShield = true;
+                document.getElementById('shield-status-text').innerText = 'Execution Shield: ACTIVE';
+                document.getElementById('shield-status-text').className = 'text-emerald-400 font-bold';
+                audio.correct();
+                showPopupAlert('🛡️ Execution Shield Activated! Executables are now safe from corruption.');
                 renderShopModal();
-                updateStatusBar();
+                updateGlobalProgress();
             }
         }
 
-        function renderRulesList() {
-            const list = document.getElementById('active-rules-list');
-            list.innerHTML = '';
-            state.rules.forEach((r, idx) => {
-                const div = document.createElement('div');
-                div.className = "bg-slate-950 p-2 rounded-lg border border-slate-800 flex justify-between items-center text-xs";
-                div.innerHTML = `<span>IF <b>${r.ifType}</b> == "${r.val}" &rarr; <span class="text-purple-400 font-semibold">${r.action}</span></span>
-                <button class="text-red-400 hover:text-red-300" onclick="state.rules.splice(${idx},1); renderRulesList();"><i class="fa-solid fa-trash"></i></button>`;
-                list.appendChild(div);
-            });
+        function showPopupAlert(msg) {
+            const container = document.getElementById('popup-container');
+            const toast = document.createElement('div');
+            toast.className = "bg-slate-900 border border-blue-500/50 p-3 rounded-xl shadow-2xl text-xs text-slate-100 flex items-center gap-2 pointer-events-auto transition-all duration-300";
+            toast.innerHTML = `<i class="fa-solid fa-circle-info text-blue-400 text-base"></i> <span>${msg}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 4000);
         }
+
+        /* ==========================================================================
+           8. INITIALIZATION & EVENT LISTENERS
+           ========================================================================== */
+        window.addEventListener('DOMContentLoaded', () => {
+            initFileSystem();
+            renderExplorer();
+
+            // Navigation Buttons
+            document.getElementById('nav-up').onclick = () => {
+                if (state.currentPath.length > 1) {
+                    state.currentPath.pop();
+                    renderExplorer();
+                }
+            };
+            document.getElementById('nav-refresh').onclick = () => renderExplorer();
+
+            // Search Bar
+            document.getElementById('search-input').oninput = (e) => {
+                state.searchQuery = e.target.value;
+                renderExplorer();
+            };
+
+            // View Toggle
+            document.getElementById('view-grid-btn').onclick = () => {
+                state.viewMode = 'grid';
+                document.getElementById('view-grid-btn').className = "p-1.5 px-3 bg-blue-600 text-white font-semibold";
+                document.getElementById('view-list-btn').className = "p-1.5 px-3 text-slate-400 hover:text-slate-200 font-semibold";
+                renderExplorer();
+            };
+            document.getElementById('view-list-btn').onclick = () => {
+                state.viewMode = 'list';
+                document.getElementById('view-list-btn').className = "p-1.5 px-3 bg-blue-600 text-white font-semibold";
+                document.getElementById('view-grid-btn').className = "p-1.5 px-3 text-slate-400 hover:text-slate-200 font-semibold";
+                renderExplorer();
+            };
+
+            // Header Quick Buttons
+            document.getElementById('btn-select-wrong').onclick = selectAllMisplaced;
+            document.getElementById('btn-auto-sort').onclick = autoSortSafeFiles;
+            document.getElementById('btn-shop').onclick = () => {
+                renderShopModal();
+                document.getElementById('modal-shop').classList.remove('hidden');
+            };
+
+            document.querySelectorAll('.close-modal').forEach(btn => {
+                btn.onclick = () => document.getElementById('modal-shop').classList.add('hidden');
+            });
+
+            // Audio Toggle
+            document.getElementById('btn-audio-toggle').onclick = () => {
+                audio.enabled = !audio.enabled;
+                document.getElementById('audio-icon').className = audio.enabled ? "fa-solid fa-volume-high" : "fa-solid fa-volume-xmark text-rose-400";
+            };
+
+            // Keyboard Shortcuts
+            window.addEventListener('keydown', (e) => {
+                if (e.target.tagName === 'INPUT') return;
+                if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a') {
+                    e.preventDefault();
+                    const currentParent = state.currentPath[state.currentPath.length - 1];
+                    state.files.filter(f => f.parent === currentParent).forEach(f => state.selectedIds.add(f.id));
+                    renderExplorer();
+                } else if (e.key === 'Delete') {
+                    // Send selected files to Trash
+                    state.files.forEach(f => {
+                        if (state.selectedIds.has(f.id) && !f.isFolder) {
+                            f.parent = 'Trash';
+                        }
+                    });
+                    state.selectedIds.clear();
+                    renderExplorer();
+                }
+            });
+
+            window.addEventListener('click', () => {
+                document.getElementById('context-menu').classList.add('hidden');
+            });
+        });
     </script>
 </body>
 </html>
