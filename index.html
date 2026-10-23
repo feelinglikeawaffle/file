@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Digital Declutterer / File Sorting Master</title>
+    <title>Digital Declutterer 999 - Massive File Explorer Sorting Simulator</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome Icons -->
@@ -33,13 +33,11 @@
         }
     </script>
     <style>
-        /* Custom Scrollbars */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.2); }
         ::-webkit-scrollbar-thumb { background: rgba(156, 163, 175, 0.3); border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: rgba(156, 163, 175, 0.6); }
 
-        /* Lasso Box Selection */
         #selection-box {
             position: absolute;
             border: 1px dashed #3b82f6;
@@ -49,7 +47,6 @@
             display: none;
         }
 
-        /* Hazard & Glitch Animations */
         @keyframes hazard-pulse {
             0%, 100% { border-color: rgba(239, 68, 68, 0.9); box-shadow: 0 0 12px rgba(239, 68, 68, 0.5); }
             50% { border-color: rgba(245, 158, 11, 0.9); box-shadow: 0 0 18px rgba(245, 158, 11, 0.7); }
@@ -75,51 +72,42 @@
             outline: 2px dashed #3b82f6 !important;
             background-color: rgba(59, 130, 246, 0.25) !important;
         }
-
-        /* OS Themes */
-        body.theme-cyberpunk {
-            --bg-dark: #0d0221;
-            --surface: #02010a;
-            --accent: #ff007f;
-        }
-        body.theme-win98 {
-            font-family: 'Tahoma', sans-serif;
-            background-color: #008080 !important;
-        }
     </style>
 </head>
 <body id="app-body" class="dark bg-osDark text-slate-100 font-sans h-screen overflow-hidden no-select antialiased flex flex-col select-none">
 
     <!-- TOP HEADER UTILITY BAR -->
     <header class="h-12 bg-slate-900 border-b border-slate-800 flex items-center justify-between px-4 text-xs z-30 shadow-lg">
-        <div class="flex items-center space-x-4">
+        <div class="flex items-center space-x-3">
             <span class="font-extrabold flex items-center gap-2 text-blue-400 text-sm tracking-wide">
-                <i class="fa-solid fa-folder-tree text-amber-400 text-base"></i> DIGITAL DECLUTTERER
-                <span class="text-[10px] bg-blue-500/20 text-blue-300 border border-blue-500/30 px-2 py-0.5 rounded font-mono font-bold">OS MASTER v6.0</span>
+                <i class="fa-solid fa-folder-tree text-amber-400 text-base"></i> DIGITAL DECLUTTERER 999
+                <span class="text-[10px] bg-blue-500/20 text-blue-300 border border-blue-500/30 px-2 py-0.5 rounded font-mono font-bold">999 FILES EDITION</span>
             </span>
             
             <div class="h-4 w-px bg-slate-800"></div>
 
-            <!-- Action Buttons -->
             <button id="btn-shop" class="hover:bg-slate-800 px-3 py-1.5 rounded-lg flex items-center gap-2 text-amber-400 font-semibold transition border border-amber-500/20">
                 <i class="fa-solid fa-shop"></i> Tech Shop
+            </button>
+            <button id="btn-puzzle-helper" class="hover:bg-slate-800 px-3 py-1.5 rounded-lg flex items-center gap-2 text-purple-400 font-semibold transition border border-purple-500/20">
+                <i class="fa-solid fa-brain"></i> Puzzle Index
             </button>
             <button id="btn-select-wrong" class="hover:bg-slate-800 px-3 py-1.5 rounded-lg flex items-center gap-2 text-rose-400 font-semibold transition border border-rose-500/20">
                 <i class="fa-solid fa-object-group"></i> Select Misplaced
             </button>
             <button id="btn-auto-sort" class="hover:bg-blue-600/20 px-3 py-1.5 rounded-lg flex items-center gap-2 text-blue-400 font-semibold transition border border-blue-500/20">
-                <i class="fa-solid fa-wand-magic-sparkles"></i> Auto-Sort Safe Files
+                <i class="fa-solid fa-wand-magic-sparkles"></i> Auto-Sort Easy
             </button>
         </div>
 
         <div class="flex items-center space-x-4">
             <!-- Global Sorting Progress Tracker -->
             <div class="flex items-center gap-3 bg-slate-950 border border-slate-800 px-3.5 py-1.5 rounded-xl shadow-inner">
-                <span class="text-slate-400 font-medium">System Sorted:</span>
-                <div class="w-32 bg-slate-900 h-2.5 rounded-full overflow-hidden border border-slate-800 flex">
+                <span class="text-slate-400 font-medium">Sorted:</span>
+                <div class="w-36 bg-slate-900 h-2.5 rounded-full overflow-hidden border border-slate-800 flex">
                     <div id="global-progress-bar" class="bg-emerald-500 h-full transition-all duration-300" style="width: 0%;"></div>
                 </div>
-                <span id="global-progress-text" class="font-mono font-bold text-emerald-400">0 / 0 (0%)</span>
+                <span id="global-progress-text" class="font-mono font-bold text-emerald-400">0 / 999 (0%)</span>
             </div>
 
             <!-- Player Bytes Credits -->
@@ -151,10 +139,10 @@
             <!-- Dynamic breadcrumb links -->
         </div>
 
-        <!-- Search Bar -->
-        <div class="relative w-64">
+        <!-- Global Search Bar -->
+        <div class="relative w-72">
             <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-500"></i>
-            <input type="text" id="search-input" placeholder="Search files in system..." class="w-full bg-slate-900 border border-slate-800 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-blue-500 font-mono">
+            <input type="text" id="search-input" placeholder="Search all 999 files by name, ext, puzzle..." class="w-full bg-slate-900 border border-slate-800 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-blue-500 font-mono">
         </div>
 
         <!-- View Toggle Buttons -->
@@ -164,11 +152,29 @@
         </div>
     </div>
 
+    <!-- QUICK FILTER CHIPS BAR -->
+    <div class="px-4 py-1.5 bg-slate-900/60 border-b border-slate-800 flex items-center justify-between text-xs font-mono">
+        <div class="flex items-center space-x-2 overflow-x-auto py-0.5" id="filter-chips-container">
+            <span class="text-slate-500 font-bold uppercase text-[10px] mr-1">Filter View:</span>
+            <button class="filter-chip px-2.5 py-1 rounded-md bg-blue-600 text-white font-bold" data-filter="all">Show All</button>
+            <button class="filter-chip px-2.5 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300" data-filter="misplaced">Misplaced Only ✗</button>
+            <button class="filter-chip px-2.5 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-amber-400" data-filter="hazards">Exe/Py Hazards ⚠️</button>
+            <button class="filter-chip px-2.5 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-purple-400" data-filter="puzzle">Puzzle Files 🧩</button>
+        </div>
+
+        <!-- PAGINATION CONTROLS -->
+        <div class="flex items-center space-x-2 text-slate-300">
+            <button id="pg-prev" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 rounded text-slate-200 font-bold">&lt; Prev</button>
+            <span id="pg-info" class="font-bold text-blue-400">Page 1 / 1</span>
+            <button id="pg-next" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 rounded text-slate-200 font-bold">Next &gt;</button>
+        </div>
+    </div>
+
     <!-- MAIN OS WORKSPACE -->
     <div class="flex-1 flex overflow-hidden relative">
 
-        <!-- SIDEBAR DIRECTORY TREE (PERMANENTLY EXPANDED FOR DRAG & DROP TARGETS) -->
-        <aside class="w-72 border-r border-slate-800 bg-slate-950/90 flex flex-col p-3 select-none overflow-y-auto space-y-4">
+        <!-- SIDEBAR DIRECTORY TREE -->
+        <aside class="w-80 border-r border-slate-800 bg-slate-950/90 flex flex-col p-3 select-none overflow-y-auto space-y-4">
             <div>
                 <div class="text-[10px] font-extrabold tracking-wider text-slate-500 uppercase px-2 mb-2 flex justify-between items-center">
                     <span>System Drives</span>
@@ -181,10 +187,10 @@
 
             <div>
                 <div class="text-[10px] font-extrabold tracking-wider text-slate-500 uppercase px-2 mb-2 flex justify-between items-center">
-                    <span>Target Folder Tree (Drag Here)</span>
+                    <span>Target Folder Tree (Drag Target)</span>
                     <i class="fa-solid fa-folder-tree text-slate-600"></i>
                 </div>
-                <div id="target-folder-tree" class="space-y-1 font-mono text-xs">
+                <div id="target-folder-tree" class="space-y-1 font-mono text-xs max-h-72 overflow-y-auto pr-1">
                     <!-- Dynamic Folder Tree -->
                 </div>
             </div>
@@ -206,10 +212,10 @@
                 <div id="urgent-bounty-card" class="hidden bg-amber-950/40 border border-amber-500/40 rounded-xl p-3 text-xs space-y-1.5 shadow-lg">
                     <div class="font-bold text-amber-400 flex justify-between items-center">
                         <span class="flex items-center gap-1.5"><i class="fa-solid fa-clock"></i> VIP BOUNTY</span>
-                        <span id="bounty-timer" class="font-mono text-rose-400 font-bold">30s</span>
+                        <span id="bounty-timer" class="font-mono text-rose-400 font-bold">45s</span>
                     </div>
-                    <div id="bounty-description" class="text-slate-300 font-medium leading-snug">Move 5 .py scripts to /Code/Python_Scripts!</div>
-                    <div class="text-[10px] text-amber-300/80 font-mono font-semibold">+400 BYTES REWARD</div>
+                    <div id="bounty-description" class="text-slate-300 font-medium leading-snug">Move 5 ROM dumps to D:/Emulation/ROMs!</div>
+                    <div class="text-[10px] text-amber-300/80 font-mono font-semibold">+500 BYTES REWARD</div>
                 </div>
             </div>
         </aside>
@@ -256,7 +262,7 @@
     </footer>
 
     <!-- CONTEXT MENU (RIGHT CLICK) -->
-    <div id="context-menu" class="hidden absolute z-50 w-52 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl text-xs py-1.5 text-slate-200">
+    <div id="context-menu" class="hidden absolute z-50 w-56 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl text-xs py-1.5 text-slate-200">
         <button id="ctx-open" class="w-full text-left px-3.5 py-1.5 hover:bg-blue-600 hover:text-white flex items-center gap-2.5 font-medium"><i class="fa-solid fa-folder-open text-amber-400 w-4"></i> Open Folder</button>
         <button id="ctx-move-correct" class="w-full text-left px-3.5 py-1.5 hover:bg-blue-600 hover:text-white flex items-center gap-2.5 font-medium"><i class="fa-solid fa-circle-check text-emerald-400 w-4"></i> Auto-Move to Proper Folder</button>
         <div class="my-1 border-t border-slate-800"></div>
@@ -278,6 +284,28 @@
             <div class="flex justify-between items-center pt-3 border-t border-slate-800">
                 <div class="text-sm font-mono text-amber-400 font-bold">Balance: <span id="shop-balance-display">500</span> BYTES</div>
                 <button class="close-modal px-5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl font-semibold">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PUZZLE HELPER INDEX MODAL -->
+    <div id="modal-puzzle-helper" class="hidden fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 w-full max-w-2xl rounded-2xl p-6 shadow-2xl space-y-4 max-h-[85vh] flex flex-col">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h3 class="font-extrabold flex items-center gap-2 text-purple-400 text-lg"><i class="fa-solid fa-brain"></i> Cryptic & Puzzle File Index Helper</h3>
+                <button class="close-puzzle-modal text-slate-400 hover:text-white text-lg"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <div class="text-xs text-slate-400 leading-relaxed">
+                Stuck on where a mysterious file belongs? Consult this system administrator logic directory:
+            </div>
+
+            <div class="flex-1 overflow-y-auto space-y-2 text-xs font-mono pr-1" id="puzzle-guide-list">
+                <!-- Dynamic Puzzle Guide Entries -->
+            </div>
+
+            <div class="pt-3 border-t border-slate-800 flex justify-end">
+                <button class="close-puzzle-modal px-5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl font-semibold">Got It</button>
             </div>
         </div>
     </div>
@@ -329,91 +357,204 @@
         const audio = new AudioEngine();
 
         /* ==========================================================================
-           2. TARGET DIRECTORIES & DEFINITIONS
+           2. TARGET DIRECTORIES & DEFINITIONS (30+ DEDICATED FOLDERS)
            ========================================================================== */
         const SAFE_STAGING_PATH = 'Drive C:/Downloads/Safe_Staging';
 
         const TARGET_FOLDERS = {
-            'Documents': { drive: 'Drive C:', targetPath: 'Drive C:/Documents', icon: 'fa-file-lines text-blue-400' },
-            'Pictures': { drive: 'Drive C:', targetPath: 'Drive C:/Pictures', icon: 'fa-file-image text-emerald-400' },
+            // DRIVE C:
+            'Photos': { drive: 'Drive C:', targetPath: 'Drive C:/Pictures/Photos', icon: 'fa-file-image text-emerald-400' },
+            'Design': { drive: 'Drive C:', targetPath: 'Drive C:/Pictures/Design_Assets', icon: 'fa-palette text-pink-400' },
+            'Financial': { drive: 'Drive C:', targetPath: 'Drive C:/Documents/Financial', icon: 'fa-file-invoice-dollar text-green-400' },
+            'Legal': { drive: 'Drive C:', targetPath: 'Drive C:/Documents/Legal', icon: 'fa-scale-balanced text-amber-300' },
+            'Personal': { drive: 'Drive C:', targetPath: 'Drive C:/Documents/Personal', icon: 'fa-user text-blue-300' },
             'System Apps': { drive: 'Drive C:', targetPath: 'Drive C:/Programs/System_Apps', icon: 'fa-file-zipper text-purple-400' },
             'Games': { drive: 'Drive C:', targetPath: 'Drive C:/Programs/Games', icon: 'fa-gamepad text-indigo-400' },
-            'Audio': { drive: 'Drive D:', targetPath: 'Drive D:/Audio', icon: 'fa-file-audio text-amber-400' },
-            'Video': { drive: 'Drive D:', targetPath: 'Drive D:/Video', icon: 'fa-file-video text-rose-400' },
+            'Utilities': { drive: 'Drive C:', targetPath: 'Drive C:/Programs/Utilities', icon: 'fa-screwdriver-wrench text-sky-400' },
+
+            // DRIVE D:
+            'Music': { drive: 'Drive D:', targetPath: 'Drive D:/Audio/Music', icon: 'fa-music text-amber-400' },
+            'Podcasts': { drive: 'Drive D:', targetPath: 'Drive D:/Audio/Podcasts', icon: 'fa-podcast text-amber-300' },
+            'Movies': { drive: 'Drive D:', targetPath: 'Drive D:/Video/Movies', icon: 'fa-film text-rose-400' },
+            'Clips': { drive: 'Drive D:', targetPath: 'Drive D:/Video/Clips', icon: 'fa-video text-rose-300' },
             'Python Scripts': { drive: 'Drive D:', targetPath: 'Drive D:/Code/Python_Scripts', icon: 'fa-file-code text-cyan-400' },
             'Dev Tools': { drive: 'Drive D:', targetPath: 'Drive D:/Code/Dev_Tools', icon: 'fa-code text-teal-400' },
-            'Archives': { drive: 'Drive D:', targetPath: 'Drive D:/Archives', icon: 'fa-file-box text-orange-400' }
+            'Legacy Code': { drive: 'Drive D:', targetPath: 'Drive D:/Code/Legacy', icon: 'fa-laptop-code text-indigo-300', isPuzzle: true, clue: "Spaghetti code, legacy files & old script projects" },
+            'Shell Scripts': { drive: 'Drive D:', targetPath: 'Drive D:/Code/Scripts', icon: 'fa-terminal text-emerald-300', isPuzzle: true, clue: "Kernel patches, automation bash & .sh files" },
+            'Archives': { drive: 'Drive D:', targetPath: 'Drive D:/Archives/Compressed', icon: 'fa-file-box text-orange-400' },
+            'ISOs': { drive: 'Drive D:', targetPath: 'Drive D:/Archives/Disk_Images', icon: 'fa-compact-disc text-blue-400', isPuzzle: true, clue: "Virtual disk images, OS installers & .iso files" },
+            'ROMs': { drive: 'Drive D:', targetPath: 'Drive D:/Emulation/ROMs', icon: 'fa-headset text-purple-300', isPuzzle: true, clue: "Retro console dumps, arcade backups & .rom files" },
+
+            // DRIVE E:
+            'Quarantine': { drive: 'Drive E:', targetPath: 'Drive E:/Security/Quarantine', icon: 'fa-biohazard text-red-400' },
+            'Security Keys': { drive: 'Drive E:', targetPath: 'Drive E:/Security/Keys', icon: 'fa-key text-yellow-400', isPuzzle: true, clue: "PEM certificates, SSL ciphers & encryption keys" },
+            'Confidential Logs': { drive: 'Drive E:', targetPath: 'Drive E:/Confidential/Logs', icon: 'fa-user-secret text-slate-300', isPuzzle: true, clue: "Secret diaries, crash dumps, system event logs" },
+            'Server Backups': { drive: 'Drive E:', targetPath: 'Drive E:/Backups/Server_DB', icon: 'fa-database text-cyan-300', isPuzzle: true, clue: "SQL dumps, JSON payloads & database exports" },
+            'Mobile APKs': { drive: 'Drive E:', targetPath: 'Drive E:/Mobile/APKs', icon: 'fa-mobile-screen text-green-300', isPuzzle: true, clue: "Android application packages & mobile binaries" },
+
+            // DRIVE F:
+            'Cloud Sync': { drive: 'Drive F:', targetPath: 'Drive F:/Cloud/Sync', icon: 'fa-cloud text-blue-300' },
+            'Trash Vault': { drive: 'Drive F:', targetPath: 'Drive F:/Vault/Junk', icon: 'fa-trash-can text-red-400' }
         };
 
-        const RAW_FILE_CATALOG = [
-            // Safe Staging EXEs (Start in Safe_Staging, target specific program subfolders)
-            { name: 'minecraft_launcher', ext: 'exe', targetKey: 'Games', isHazard: true },
-            { name: 'steam_client_setup', ext: 'exe', targetKey: 'Games', isHazard: true },
-            { name: 'calculator_plus', ext: 'exe', targetKey: 'System_Apps', isHazard: true },
-            { name: 'task_manager_pro', ext: 'exe', targetKey: 'System_Apps', isHazard: true },
-            { name: 'antivirus_scanner', ext: 'exe', targetKey: 'System_Apps', isHazard: true },
+        /* ==========================================================================
+           3. PROCEDURAL GENERATOR FOR EXACTLY 999 FILES
+           ========================================================================== */
+        function generate999Files() {
+            const files = [];
 
-            // Safe Staging PYs (Start in Safe_Staging, target code subfolders)
-            { name: 'data_scraper_bot', ext: 'py', targetKey: 'Python Scripts', isHazard: true },
-            { name: 'machine_learning_model', ext: 'py', targetKey: 'Python Scripts', isHazard: true },
-            { name: 'discord_auto_reply', ext: 'py', targetKey: 'Python Scripts', isHazard: true },
-            { name: 'compiler_toolchain', ext: 'py', targetKey: 'Dev Tools', isHazard: true },
+            const namePrefixes = [
+                'vacation_sunset', 'q3_report', 'tax_return_2025', 'family_reunion', 'cyberpunk_beat',
+                'podcast_ep4', 'minecraft_launcher', 'steam_setup', 'data_scraper', 'model_trainer',
+                'spaghetti_code', 'kernel_patch', 'cipher_key_rsa', 'ancient_game', 'boss_diary',
+                'database_backup', 'android_build', 'ubuntu_desktop', 'tmp_cache', 'system_log',
+                'wedding_album', 'financial_audit', 'project_proposal', 'lofi_chill', 'movie_trailer',
+                'compiler_tool', 'calculator_app', 'virus_scanner', 'server_payload', 'retro_arcade'
+            ];
 
-            // Regular Safe Files (Scattered across folders)
-            { name: 'q3_financial_report', ext: 'pdf', targetKey: 'Documents' },
-            { name: 'apartment_lease_2025', ext: 'docx', targetKey: 'Documents' },
-            { name: 'grocery_shopping_list', ext: 'txt', targetKey: 'Documents' },
-            { name: 'family_sunset_vacation', ext: 'png', targetKey: 'Pictures' },
-            { name: 'cat_meme_reaction', ext: 'gif', targetKey: 'Pictures' },
-            { name: 'lofi_chill_beats_loop', ext: 'mp3', targetKey: 'Audio' },
-            { name: 'podcast_interview_ep04', ext: 'wav', targetKey: 'Audio' },
-            { name: 'birthday_party_clip', ext: 'mp4', targetKey: 'Video' },
-            { name: 'old_project_backup', ext: 'zip', targetKey: 'Archives' },
+            const categories = [
+                { ext: 'png', targetKey: 'Photos' },
+                { ext: 'jpg', targetKey: 'Photos' },
+                { ext: 'svg', targetKey: 'Design' },
+                { ext: 'pdf', targetKey: 'Financial' },
+                { ext: 'docx', targetKey: 'Legal' },
+                { ext: 'txt', targetKey: 'Personal' },
+                { ext: 'exe', targetKey: 'System Apps', isHazard: true },
+                { ext: 'exe', targetKey: 'Games', isHazard: true },
+                { ext: 'exe', targetKey: 'Utilities', isHazard: true },
+                { ext: 'py', targetKey: 'Python Scripts', isHazard: true },
+                { ext: 'py', targetKey: 'Legacy Code', isHazard: true, isPuzzle: true },
+                { ext: 'mp3', targetKey: 'Music' },
+                { ext: 'wav', targetKey: 'Podcasts' },
+                { ext: 'mp4', targetKey: 'Movies' },
+                { ext: 'mkv', targetKey: 'Clips' },
+                { ext: 'sh', targetKey: 'Shell Scripts', isPuzzle: true },
+                { ext: 'zip', targetKey: 'Archives' },
+                { ext: 'iso', targetKey: 'ISOs', isPuzzle: true },
+                { ext: 'rom', targetKey: 'ROMs', isPuzzle: true },
+                { ext: 'pem', targetKey: 'Security Keys', isPuzzle: true },
+                { ext: 'log', targetKey: 'Confidential Logs', isPuzzle: true },
+                { ext: 'sql', targetKey: 'Server Backups', isPuzzle: true },
+                { ext: 'apk', targetKey: 'Mobile APKs', isPuzzle: true },
+                { ext: 'tmp', targetKey: 'Trash' }
+            ];
 
-            // Junk/Trash
-            { name: 'temp_crash_dump', ext: 'tmp', targetKey: 'Trash' },
-            { name: 'browser_cache_log', ext: 'log', targetKey: 'Trash' }
-        ];
+            const spawnFolders = [
+                'Drive C:/Downloads/Unsorted_Batch_1',
+                'Drive C:/Downloads/Unsorted_Batch_2',
+                'Drive D:/Backups/Messy_Dump',
+                'Drive E:/Unsorted_Cloud_Sync'
+            ];
+
+            for (let i = 1; i <= 999; i++) {
+                const cat = categories[i % categories.length];
+                const prefix = namePrefixes[i % namePrefixes.length];
+                const fileName = `${prefix}_${i}`;
+
+                let initialPath = spawnFolders[i % spawnFolders.length];
+
+                // EXEs and PYs start in Safe_Staging
+                if (cat.isHazard) {
+                    initialPath = SAFE_STAGING_PATH;
+                }
+
+                const targetInfo = TARGET_FOLDERS[cat.targetKey];
+                const finalTarget = targetInfo ? targetInfo.targetPath : 'Recycle Bin';
+
+                files.push({
+                    id: `file_999_${i}`,
+                    name: fileName,
+                    ext: cat.ext,
+                    targetKey: cat.targetKey,
+                    targetPath: finalTarget,
+                    isHazard: cat.isHazard || false,
+                    isPuzzle: cat.isPuzzle || false,
+                    graceTimer: 30,
+                    isCorrupted: false,
+                    currentPath: initialPath,
+                    size: (Math.random() * 15 + 0.5).toFixed(1)
+                });
+            }
+
+            return files;
+        }
 
         /* ==========================================================================
-           3. GAME STATE
+           4. GAME STATE & PAGINATION
            ========================================================================== */
         const state = {
             credits: 500,
-            currentPath: ['Drive C:', 'Downloads', 'Safe_Staging'],
+            currentPath: ['Drive C:', 'Downloads', 'Unsorted_Batch_1'],
             selectedIds: new Set(),
             viewMode: 'grid',
             searchQuery: '',
+            filterType: 'all',
+            currentPage: 1,
+            pageSize: 48, // 48 items per page for ultra 60fps rendering
             files: [],
-            recycleBin: [],
             executionShield: false,
-            graceDuration: 20, // 20 Seconds base grace period
+            graceDuration: 30,
             bounty: null
         };
 
-        /* Seed initial file system */
         function initFileSystem() {
             state.files = [];
 
-            // Core Folders Hierarchy
+            // Folders Architecture
             const folderStructure = [
+                // Drive C:
                 { id: 'f_c_downloads', name: 'Downloads', drive: 'Drive C:', parentPath: 'Drive C:' },
                 { id: 'f_c_safe_staging', name: 'Safe_Staging', drive: 'Drive C:', parentPath: 'Drive C:/Downloads' },
-                { id: 'f_c_documents', name: 'Documents', drive: 'Drive C:', parentPath: 'Drive C:' },
+                { id: 'f_c_unsorted1', name: 'Unsorted_Batch_1', drive: 'Drive C:', parentPath: 'Drive C:/Downloads' },
+                { id: 'f_c_unsorted2', name: 'Unsorted_Batch_2', drive: 'Drive C:', parentPath: 'Drive C:/Downloads' },
                 { id: 'f_c_pictures', name: 'Pictures', drive: 'Drive C:', parentPath: 'Drive C:' },
+                { id: 'f_c_photos', name: 'Photos', drive: 'Drive C:', parentPath: 'Drive C:/Pictures' },
+                { id: 'f_c_design', name: 'Design_Assets', drive: 'Drive C:', parentPath: 'Drive C:/Pictures' },
+                { id: 'f_c_documents', name: 'Documents', drive: 'Drive C:', parentPath: 'Drive C:' },
+                { id: 'f_c_financial', name: 'Financial', drive: 'Drive C:', parentPath: 'Drive C:/Documents' },
+                { id: 'f_c_legal', name: 'Legal', drive: 'Drive C:', parentPath: 'Drive C:/Documents' },
+                { id: 'f_c_personal', name: 'Personal', drive: 'Drive C:', parentPath: 'Drive C:/Documents' },
                 { id: 'f_c_programs', name: 'Programs', drive: 'Drive C:', parentPath: 'Drive C:' },
                 { id: 'f_c_sysapps', name: 'System_Apps', drive: 'Drive C:', parentPath: 'Drive C:/Programs' },
                 { id: 'f_c_games', name: 'Games', drive: 'Drive C:', parentPath: 'Drive C:/Programs' },
+                { id: 'f_c_utilities', name: 'Utilities', drive: 'Drive C:', parentPath: 'Drive C:/Programs' },
 
+                // Drive D:
+                { id: 'f_d_backups', name: 'Backups', drive: 'Drive D:', parentPath: 'Drive D:' },
+                { id: 'f_d_messydump', name: 'Messy_Dump', drive: 'Drive D:', parentPath: 'Drive D:/Backups' },
                 { id: 'f_d_audio', name: 'Audio', drive: 'Drive D:', parentPath: 'Drive D:' },
+                { id: 'f_d_music', name: 'Music', drive: 'Drive D:', parentPath: 'Drive D:/Audio' },
+                { id: 'f_d_podcasts', name: 'Podcasts', drive: 'Drive D:', parentPath: 'Drive D:/Audio' },
                 { id: 'f_d_video', name: 'Video', drive: 'Drive D:', parentPath: 'Drive D:' },
+                { id: 'f_d_movies', name: 'Movies', drive: 'Drive D:', parentPath: 'Drive D:/Video' },
+                { id: 'f_d_clips', name: 'Clips', drive: 'Drive D:', parentPath: 'Drive D:/Video' },
                 { id: 'f_d_code', name: 'Code', drive: 'Drive D:', parentPath: 'Drive D:' },
                 { id: 'f_d_pyscripts', name: 'Python_Scripts', drive: 'Drive D:', parentPath: 'Drive D:/Code' },
                 { id: 'f_d_devtools', name: 'Dev_Tools', drive: 'Drive D:', parentPath: 'Drive D:/Code' },
+                { id: 'f_d_legacy', name: 'Legacy', drive: 'Drive D:', parentPath: 'Drive D:/Code' },
+                { id: 'f_d_scripts', name: 'Scripts', drive: 'Drive D:', parentPath: 'Drive D:/Code' },
                 { id: 'f_d_archives', name: 'Archives', drive: 'Drive D:', parentPath: 'Drive D:' },
+                { id: 'f_d_compressed', name: 'Compressed', drive: 'Drive D:', parentPath: 'Drive D:/Archives' },
+                { id: 'f_d_diskimages', name: 'Disk_Images', drive: 'Drive D:', parentPath: 'Drive D:/Archives' },
+                { id: 'f_d_emulation', name: 'Emulation', drive: 'Drive D:', parentPath: 'Drive D:' },
+                { id: 'f_d_roms', name: 'ROMs', drive: 'Drive D:', parentPath: 'Drive D:/Emulation' },
 
-                { id: 'f_e_quarantine', name: 'Quarantine_Vault', drive: 'Drive E:', parentPath: 'Drive E:' },
-                { id: 'f_e_logs', name: 'Security_Logs', drive: 'Drive E:', parentPath: 'Drive E:' }
+                // Drive E:
+                { id: 'f_e_unsorted', name: 'Unsorted_Cloud_Sync', drive: 'Drive E:', parentPath: 'Drive E:' },
+                { id: 'f_e_security', name: 'Security', drive: 'Drive E:', parentPath: 'Drive E:' },
+                { id: 'f_e_quarantine', name: 'Quarantine', drive: 'Drive E:', parentPath: 'Drive E:/Security' },
+                { id: 'f_e_keys', name: 'Keys', drive: 'Drive E:', parentPath: 'Drive E:/Security' },
+                { id: 'f_e_confidential', name: 'Confidential', drive: 'Drive E:', parentPath: 'Drive E:' },
+                { id: 'f_e_logs', name: 'Logs', drive: 'Drive E:', parentPath: 'Drive E:/Confidential' },
+                { id: 'f_e_serverdb', name: 'Server_DB', drive: 'Drive E:', parentPath: 'Drive E:/Backups' },
+                { id: 'f_e_mobile', name: 'Mobile', drive: 'Drive E:', parentPath: 'Drive E:' },
+                { id: 'f_e_apks', name: 'APKs', drive: 'Drive E:', parentPath: 'Drive E:/Mobile' },
+
+                // Drive F:
+                { id: 'f_f_cloud', name: 'Cloud', drive: 'Drive F:', parentPath: 'Drive F:' },
+                { id: 'f_f_sync', name: 'Sync', drive: 'Drive F:', parentPath: 'Drive F:/Cloud' },
+                { id: 'f_f_vault', name: 'Vault', drive: 'Drive F:', parentPath: 'Drive F:' },
+                { id: 'f_f_junk', name: 'Junk', drive: 'Drive F:', parentPath: 'Drive F:/Vault' }
             ];
 
             folderStructure.forEach(f => {
@@ -426,37 +567,16 @@
                 });
             });
 
-            // Populate Files
-            RAW_FILE_CATALOG.forEach((f, idx) => {
-                let initialLocation = SAFE_STAGING_PATH;
-
-                // Non-hazard files scattered in Downloads or wrong folders
-                if (!f.isHazard) {
-                    initialLocation = (idx % 2 === 0) ? 'Drive C:/Downloads' : 'Drive C:/Documents';
-                }
-
-                const targetInfo = TARGET_FOLDERS[f.targetKey];
-                const finalTargetFolder = targetInfo ? targetInfo.targetPath : 'Recycle Bin';
-
-                state.files.push({
-                    id: `file_${idx}_${Date.now()}`,
-                    name: f.name,
-                    ext: f.ext,
-                    targetKey: f.targetKey,
-                    targetPath: finalTargetFolder,
-                    isHazard: f.isHazard || false,
-                    graceTimer: state.graceDuration,
-                    isCorrupted: false,
-                    currentPath: initialLocation,
-                    size: (Math.random() * 9 + 0.8).toFixed(1)
-                });
-            });
+            // Generate 999 Files
+            const generated = generate999Files();
+            state.files.push(...generated);
 
             triggerVIPBounty();
+            renderPuzzleGuideModal();
         }
 
         /* ==========================================================================
-           4. CORRECTION & HAZARD ENGINE
+           5. HAZARD & CORRUPTION ENGINE
            ========================================================================== */
         function getFullPathString(pathArr) {
             return pathArr.join('/');
@@ -484,13 +604,11 @@
                     const isSorted = isFileCorrectlySorted(f);
                     const inSafeStaging = f.currentPath === SAFE_STAGING_PATH;
 
-                    // If outside Safe Staging and NOT in correct folder -> Timer Ticks!
                     if (!isSorted && !inSafeStaging && !f.isCorrupted) {
                         activeHazardsCount++;
                         if (f.graceTimer > 0) {
                             f.graceTimer -= 1;
                         } else {
-                            // Timer expired! 25% chance per tick to corrupt
                             if (Math.random() < 0.25) {
                                 f.isCorrupted = true;
                                 f.name = `[CORRUPTED]_${f.name}`;
@@ -499,7 +617,6 @@
                             }
                         }
                     } else if (inSafeStaging) {
-                        // Reset grace timer while safely staged
                         f.graceTimer = state.graceDuration;
                     }
                 }
@@ -519,22 +636,46 @@
         setInterval(tickHazardTimers, 1000);
 
         /* ==========================================================================
-           5. UI RENDER ENGINE
+           6. HIGH-PERFORMANCE RENDER ENGINE (PAGINATED AT 60 FPS)
            ========================================================================== */
         function renderExplorer() {
             const container = document.getElementById('file-container');
             container.innerHTML = '';
 
             const currentFullPath = getFullPathString(state.currentPath);
-            let visibleItems = state.files.filter(f => f.parentPath === currentFullPath || f.currentPath === currentFullPath);
+
+            // Filter Pipeline
+            let filteredList = state.files.filter(f => f.parentPath === currentFullPath || f.currentPath === currentFullPath);
 
             if (state.searchQuery.trim() !== '') {
                 const q = state.searchQuery.toLowerCase();
-                visibleItems = state.files.filter(f => f.name.toLowerCase().includes(q) || f.ext?.toLowerCase().includes(q));
+                filteredList = state.files.filter(f => 
+                    f.name.toLowerCase().includes(q) || 
+                    f.ext?.toLowerCase().includes(q) || 
+                    f.targetKey?.toLowerCase().includes(q)
+                );
+            }
+
+            if (state.filterType === 'misplaced') {
+                filteredList = filteredList.filter(f => !f.isFolder && !isFileCorrectlySorted(f));
+            } else if (state.filterType === 'hazards') {
+                filteredList = filteredList.filter(f => !f.isFolder && f.isHazard);
+            } else if (state.filterType === 'puzzle') {
+                filteredList = filteredList.filter(f => !f.isFolder && f.isPuzzle);
             }
 
             // Sort folders first
-            visibleItems.sort((a, b) => (b.isFolder ? 1 : 0) - (a.isFolder ? 1 : 0));
+            filteredList.sort((a, b) => (b.isFolder ? 1 : 0) - (a.isFolder ? 1 : 0));
+
+            // Pagination calculation
+            const totalItems = filteredList.length;
+            const totalPages = Math.max(1, Math.ceil(totalItems / state.pageSize));
+            if (state.currentPage > totalPages) state.currentPage = totalPages;
+
+            const startIndex = (state.currentPage - 1) * state.pageSize;
+            const pageItems = filteredList.slice(startIndex, startIndex + state.pageSize);
+
+            document.getElementById('pg-info').innerText = `Page ${state.currentPage} / ${totalPages} (${totalItems} items)`;
 
             if (state.viewMode === 'grid') {
                 container.className = "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3.5 min-h-full content-start";
@@ -542,13 +683,12 @@
                 container.className = "flex flex-col space-y-1.5 w-full";
             }
 
-            visibleItems.forEach(item => {
+            pageItems.forEach(item => {
                 const isSelected = state.selectedIds.has(item.id);
                 const itemEl = document.createElement('div');
                 itemEl.dataset.id = item.id;
 
                 if (item.isFolder) {
-                    // FOLDER CARD (1-CLICK NAVIGATION)
                     itemEl.className = `p-3.5 rounded-xl border flex items-center gap-3 cursor-pointer transition select-none shadow-sm ${
                         isSelected 
                             ? 'bg-blue-600/30 border-blue-500 text-blue-200 ring-2 ring-blue-500/50' 
@@ -564,21 +704,16 @@
                         <i class="fa-solid fa-chevron-right text-slate-600 text-xs"></i>
                     `;
 
-                    // 1-Click Open
                     itemEl.onclick = (e) => {
                         e.stopPropagation();
                         openFolder(item.name);
                     };
 
-                    itemEl.ondragover = (e) => {
-                        e.preventDefault();
-                        itemEl.classList.add('drag-over-folder');
-                    };
+                    itemEl.ondragover = (e) => { e.preventDefault(); itemEl.classList.add('drag-over-folder'); };
                     itemEl.ondragleave = () => itemEl.classList.remove('drag-over-folder');
                     itemEl.ondrop = (e) => handleFolderDrop(e, `${currentFullPath}/${item.name}`);
 
                 } else {
-                    // FILE CARD WITH STATUS BADGES
                     const isSorted = isFileCorrectlySorted(item);
                     const inSafeStaging = item.currentPath === SAFE_STAGING_PATH;
                     const isTicking = !isSorted && !inSafeStaging && item.isHazard && !item.isCorrupted;
@@ -598,22 +733,20 @@
                             )
                         }`;
 
-                        // Status Badge HTML
                         let badgeHtml = '';
                         if (isSorted) {
-                            badgeHtml = `<span class="text-emerald-400 bg-emerald-950 border border-emerald-500/50 px-1.5 py-0.5 rounded-full font-bold text-[10px]" title="Correctly Sorted!"><i class="fa-solid fa-check"></i> Done</span>`;
+                            badgeHtml = `<span class="text-emerald-400 bg-emerald-950 border border-emerald-500/50 px-1.5 py-0.5 rounded-full font-bold text-[10px]"><i class="fa-solid fa-check"></i></span>`;
                         } else if (inSafeStaging) {
-                            badgeHtml = `<span class="text-amber-300 bg-amber-950 border border-amber-500/50 px-1.5 py-0.5 rounded-full font-bold text-[10px]" title="Safe Staging: Timer Frozen! Move to target folder."><i class="fa-solid fa-shield"></i> Staged</span>`;
+                            badgeHtml = `<span class="text-amber-300 bg-amber-950 border border-amber-500/50 px-1.5 py-0.5 rounded-full font-bold text-[10px]"><i class="fa-solid fa-shield"></i></span>`;
                         } else if (isTicking) {
-                            badgeHtml = `<span class="text-rose-300 bg-rose-950 border border-rose-500/60 px-1.5 py-0.5 rounded-full font-mono text-[10px] animate-pulse" title="Risk Active: Ticking toward corruption!"><i class="fa-solid fa-clock"></i> ${item.graceTimer}s</span>`;
-                        } else if (item.isCorrupted) {
-                            badgeHtml = `<span class="text-red-400 bg-red-950 border border-red-500 px-1.5 py-0.5 rounded-full font-bold text-[10px]"><i class="fa-solid fa-virus"></i> Corrupted</span>`;
+                            badgeHtml = `<span class="text-rose-300 bg-rose-950 border border-rose-500/60 px-1.5 py-0.5 rounded-full font-mono text-[10px] animate-pulse">${item.graceTimer}s</span>`;
                         } else {
-                            badgeHtml = `<span class="text-rose-400 bg-rose-950 border border-rose-500/40 px-1.5 py-0.5 rounded-full font-bold text-[10px]" title="Belongs in: ${item.targetPath}"><i class="fa-solid fa-xmark"></i></span>`;
+                            badgeHtml = `<span class="text-rose-400 bg-rose-950 border border-rose-500/40 px-1.5 py-0.5 rounded-full font-bold text-[10px]"><i class="fa-solid fa-xmark"></i></span>`;
                         }
 
                         itemEl.innerHTML = `
                             <div class="absolute top-2 right-2 flex items-center gap-1">${badgeHtml}</div>
+                            ${item.isPuzzle ? '<div class="absolute top-2 left-2 text-purple-400 text-[10px] font-mono"><i class="fa-solid fa-puzzle-piece"></i></div>' : ''}
                             <div class="text-3xl my-2"><i class="fa-solid ${iconClass}"></i></div>
                             <div class="w-full text-center">
                                 <div class="text-xs font-bold truncate text-slate-200">${item.name}.${item.ext}</div>
@@ -621,7 +754,6 @@
                             </div>
                         `;
                     } else {
-                        // LIST VIEW
                         itemEl.className = `px-3.5 py-2 rounded-lg border flex items-center justify-between cursor-pointer transition text-xs ${
                             item.isCorrupted ? 'corrupted-item' : (
                                 isTicking ? 'border-rose-500/80 bg-rose-950/20' : (
@@ -634,13 +766,14 @@
                             <div class="flex items-center gap-3 flex-1 truncate">
                                 <i class="fa-solid ${iconClass} text-lg"></i>
                                 <span class="font-bold text-slate-200 truncate">${item.name}.${item.ext}</span>
+                                ${item.isPuzzle ? '<span class="text-[9px] bg-purple-900/60 text-purple-300 px-1.5 py-0.5 rounded font-mono">PUZZLE</span>' : ''}
                             </div>
                             <div class="w-24 font-mono text-slate-400">${item.size} MB</div>
                             <div class="w-48 text-right font-mono text-[11px]">
                                 ${isSorted 
                                     ? '<span class="text-emerald-400 font-bold"><i class="fa-solid fa-check"></i> Correct</span>' 
                                     : (inSafeStaging 
-                                        ? '<span class="text-amber-300 font-bold"><i class="fa-solid fa-shield"></i> Staged (Safe)</span>' 
+                                        ? '<span class="text-amber-300 font-bold"><i class="fa-solid fa-shield"></i> Staged</span>' 
                                         : `<span class="text-rose-400 font-bold">Target: ${item.targetKey}</span>`
                                     )
                                 }
@@ -666,6 +799,7 @@
             audio.openFolder();
             state.currentPath.push(folderName);
             state.selectedIds.clear();
+            state.currentPage = 1;
             renderExplorer();
         }
 
@@ -678,6 +812,7 @@
                 btn.innerHTML = `${idx === 0 ? '<i class="fa-solid fa-hard-drive text-amber-400"></i>' : '<i class="fa-solid fa-angle-right text-slate-600 text-[10px]"></i>'} ${folder}`;
                 btn.onclick = () => {
                     state.currentPath = state.currentPath.slice(0, idx + 1);
+                    state.currentPage = 1;
                     renderExplorer();
                 };
                 bar.appendChild(btn);
@@ -685,34 +820,34 @@
         }
 
         function renderSidebarTrees() {
-            // Drives
             const driveList = document.getElementById('drive-selector-list');
             driveList.innerHTML = '';
-            ['Drive C:', 'Drive D:', 'Drive E:'].forEach(drv => {
+            ['Drive C:', 'Drive D:', 'Drive E:', 'Drive F:'].forEach(drv => {
                 const isCurrent = state.currentPath[0] === drv;
                 const div = document.createElement('div');
                 div.className = `p-2 rounded-xl flex items-center gap-2 cursor-pointer transition ${isCurrent ? 'bg-blue-600 text-white font-bold shadow' : 'hover:bg-slate-900 text-slate-400'}`;
                 div.innerHTML = `<i class="fa-solid fa-hard-drive ${isCurrent ? 'text-amber-400' : ''}"></i> <span>${drv}</span>`;
                 div.onclick = () => {
                     state.currentPath = [drv];
+                    state.currentPage = 1;
                     renderExplorer();
                 };
                 driveList.appendChild(div);
             });
 
-            // Target Folder Tree
             const tree = document.getElementById('target-folder-tree');
             tree.innerHTML = '';
 
-            // Render Safe Staging First
+            // Safe Staging
             const safeStagingDiv = document.createElement('div');
-            safeStagingDiv.className = "p-2 rounded-xl border border-amber-500/40 bg-amber-950/20 hover:bg-amber-900/40 flex items-center justify-between cursor-pointer transition text-amber-300 font-bold mb-2";
+            safeStagingDiv.className = "p-2 rounded-xl border border-amber-500/40 bg-amber-950/20 hover:bg-amber-900/40 flex items-center justify-between cursor-pointer transition text-amber-300 font-bold mb-1.5 text-xs";
             safeStagingDiv.innerHTML = `
                 <span class="flex items-center gap-2"><i class="fa-solid fa-shield-halved text-amber-400"></i> Safe_Staging</span>
-                <span class="text-[9px] bg-amber-500/20 px-1.5 py-0.5 rounded">SAFE ZONE</span>
+                <span class="text-[9px] bg-amber-500/20 px-1.5 py-0.5 rounded">STAGING</span>
             `;
             safeStagingDiv.onclick = () => {
                 state.currentPath = ['Drive C:', 'Downloads', 'Safe_Staging'];
+                state.currentPage = 1;
                 renderExplorer();
             };
             safeStagingDiv.ondragover = (e) => { e.preventDefault(); safeStagingDiv.classList.add('drag-over-folder'); };
@@ -723,16 +858,17 @@
             Object.keys(TARGET_FOLDERS).forEach(key => {
                 const info = TARGET_FOLDERS[key];
                 const div = document.createElement('div');
-                div.className = "p-2 rounded-xl border border-slate-800 bg-slate-900/60 hover:bg-slate-800 hover:border-blue-500/50 flex items-center justify-between cursor-pointer transition text-slate-300";
+                div.className = "p-1.5 px-2 rounded-lg border border-slate-800 bg-slate-900/60 hover:bg-slate-800 hover:border-blue-500/50 flex items-center justify-between cursor-pointer transition text-slate-300 text-xs";
                 div.innerHTML = `
-                    <span class="flex items-center gap-2">
+                    <span class="flex items-center gap-2 truncate">
                         <i class="fa-solid fa-folder text-amber-400"></i> /${key}
                     </span>
-                    <span class="text-[9px] text-slate-500">${info.drive}</span>
+                    <span class="text-[9px] text-slate-500 font-mono">${info.drive}</span>
                 `;
 
                 div.onclick = () => {
                     state.currentPath = info.targetPath.split('/');
+                    state.currentPage = 1;
                     renderExplorer();
                 };
 
@@ -748,18 +884,18 @@
             const nonFolders = state.files.filter(f => !f.isFolder);
             const correctCount = nonFolders.filter(f => isFileCorrectlySorted(f)).length;
             const total = nonFolders.length;
-            const pct = total === 0 ? 100 : Math.round((correctCount / total) * 100);
+            const pct = Math.round((correctCount / total) * 100);
 
             const bar = document.getElementById('global-progress-bar');
             bar.style.width = `${pct}%`;
-            document.getElementById('global-progress-text').innerText = `${correctCount} / ${total} (${pct}%)`;
+            document.getElementById('global-progress-text').innerText = `${correctCount} / 999 (${pct}%)`;
 
             document.getElementById('status-selected').innerText = `${state.selectedIds.size} files selected`;
             document.getElementById('player-credits').innerText = state.credits.toLocaleString();
         }
 
         /* ==========================================================================
-           6. DRAG & DROP & ACTIONS
+           7. DRAG, DROP & BATCH ACTIONS
            ========================================================================== */
         function handleFileClick(e, file) {
             audio.click();
@@ -793,9 +929,8 @@
                 if (movedIds.includes(f.id) && !f.isFolder) {
                     f.currentPath = destinationPath;
 
-                    // If placed in exact correct target folder -> Award Credits!
                     if (isFileCorrectlySorted(f)) {
-                        awardCredits += 60;
+                        awardCredits += 50;
                     }
                 }
             });
@@ -844,20 +979,20 @@
                 }
             });
             audio.correct();
-            showPopupAlert(`✨ Auto-Sorted ${sortedCount} safe files to proper folders!`);
+            showPopupAlert(`✨ Auto-Sorted ${sortedCount} easy files to proper target folders!`);
             renderExplorer();
         }
 
         /* ==========================================================================
-           7. VIP BOUNTIES & SHOP
+           8. BOUNTIES & MODALS
            ========================================================================== */
         function triggerVIPBounty() {
             state.bounty = {
-                desc: 'Move 3 misplaced .py scripts into /Code/Python_Scripts',
-                targetPath: 'Drive D:/Code/Python_Scripts',
-                ext: 'py',
-                time: 35,
-                reward: 400
+                desc: 'Find and move 5 ROM dumps to D:/Emulation/ROMs!',
+                targetPath: 'Drive D:/Emulation/ROMs',
+                ext: 'rom',
+                time: 45,
+                reward: 500
             };
 
             const card = document.getElementById('urgent-bounty-card');
@@ -880,8 +1015,8 @@
 
         function checkBountyCompletion() {
             if (!state.bounty) return;
-            const sortedPyCount = state.files.filter(f => f.ext === state.bounty.ext && f.currentPath === state.bounty.targetPath).length;
-            if (sortedPyCount >= 3) {
+            const sortedCount = state.files.filter(f => f.ext === state.bounty.ext && f.currentPath === state.bounty.targetPath).length;
+            if (sortedCount >= 5) {
                 state.credits += state.bounty.reward;
                 audio.correct();
                 showPopupAlert(`🏆 VIP BOUNTY COMPLETED! +${state.bounty.reward} Bytes Reward!`);
@@ -909,10 +1044,30 @@
                 state.credits -= 450;
                 state.executionShield = true;
                 audio.correct();
-                showPopupAlert('🛡️ Execution Shield Activated! All executable hazard risks neutralized.');
+                showPopupAlert('🛡️ Execution Shield Activated!');
                 renderShopModal();
                 updateGlobalProgress();
             }
+        }
+
+        function renderPuzzleGuideModal() {
+            const list = document.getElementById('puzzle-guide-list');
+            list.innerHTML = '';
+            Object.keys(TARGET_FOLDERS).forEach(k => {
+                const item = TARGET_FOLDERS[k];
+                if (item.isPuzzle) {
+                    const div = document.createElement('div');
+                    div.className = "p-2.5 bg-slate-950 rounded-xl border border-purple-500/30 flex items-center justify-between";
+                    div.innerHTML = `
+                        <div>
+                            <span class="font-bold text-purple-300">/${k}</span>
+                            <span class="text-slate-400 block text-[11px]">${item.clue}</span>
+                        </div>
+                        <span class="text-[10px] bg-purple-950 border border-purple-500/40 text-purple-300 px-2 py-0.5 rounded font-mono">${item.targetPath}</span>
+                    `;
+                    list.appendChild(div);
+                }
+            });
         }
 
         function showPopupAlert(msg) {
@@ -925,28 +1080,51 @@
         }
 
         /* ==========================================================================
-           8. INIT & EVENT LISTENERS
+           9. INITIALIZATION & SHORTCUTS
            ========================================================================== */
         window.addEventListener('DOMContentLoaded', () => {
             initFileSystem();
             renderExplorer();
 
-            // Navigation
             document.getElementById('nav-up').onclick = () => {
                 if (state.currentPath.length > 1) {
                     state.currentPath.pop();
+                    state.currentPage = 1;
                     renderExplorer();
                 }
             };
             document.getElementById('nav-refresh').onclick = () => renderExplorer();
 
-            // Search Bar
             document.getElementById('search-input').oninput = (e) => {
                 state.searchQuery = e.target.value;
+                state.currentPage = 1;
                 renderExplorer();
             };
 
-            // View Toggles
+            // Filter Chips
+            document.querySelectorAll('.filter-chip').forEach(btn => {
+                btn.onclick = () => {
+                    document.querySelectorAll('.filter-chip').forEach(c => c.className = "filter-chip px-2.5 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300");
+                    btn.className = "filter-chip px-2.5 py-1 rounded-md bg-blue-600 text-white font-bold";
+                    state.filterType = btn.dataset.filter;
+                    state.currentPage = 1;
+                    renderExplorer();
+                };
+            });
+
+            // Pagination Controls
+            document.getElementById('pg-prev').onclick = () => {
+                if (state.currentPage > 1) {
+                    state.currentPage--;
+                    renderExplorer();
+                }
+            };
+            document.getElementById('pg-next').onclick = () => {
+                state.currentPage++;
+                renderExplorer();
+            };
+
+            // View Mode
             document.getElementById('view-grid-btn').onclick = () => {
                 state.viewMode = 'grid';
                 document.getElementById('view-grid-btn').className = "p-1.5 px-3 bg-blue-600 text-white font-semibold";
@@ -960,19 +1138,24 @@
                 renderExplorer();
             };
 
-            // Header Quick Buttons
+            // Buttons & Modals
             document.getElementById('btn-select-wrong').onclick = selectAllMisplaced;
             document.getElementById('btn-auto-sort').onclick = autoSortSafeFiles;
             document.getElementById('btn-shop').onclick = () => {
                 renderShopModal();
                 document.getElementById('modal-shop').classList.remove('hidden');
             };
+            document.getElementById('btn-puzzle-helper').onclick = () => {
+                document.getElementById('modal-puzzle-helper').classList.remove('hidden');
+            };
 
             document.querySelectorAll('.close-modal').forEach(btn => {
                 btn.onclick = () => document.getElementById('modal-shop').classList.add('hidden');
             });
+            document.querySelectorAll('.close-puzzle-modal').forEach(btn => {
+                btn.onclick = () => document.getElementById('modal-puzzle-helper').classList.add('hidden');
+            });
 
-            // Audio Toggle
             document.getElementById('btn-audio-toggle').onclick = () => {
                 audio.enabled = !audio.enabled;
                 document.getElementById('audio-icon').className = audio.enabled ? "fa-solid fa-volume-high" : "fa-solid fa-volume-xmark text-rose-400";
