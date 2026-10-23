@@ -1,0 +1,1221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Declutterer - OS File System Simulator & Tidier</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        osDark: '#0f172a',
+                        osDarkSurface: '#1e293b',
+                        osDarkBorder: '#334155',
+                        osAccent: '#3b82f6',
+                        osAccentHover: '#2563eb',
+                        osDanger: '#ef4444',
+                        osWarning: '#f59e0b',
+                        osSuccess: '#10b981'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['Fira Code', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom Scrollbar for OS Feel */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.05); }
+        .dark ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.2); }
+        ::-webkit-scrollbar-thumb { background: rgba(156, 163, 175, 0.5); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(107, 114, 128, 0.8); }
+
+        /* Selection Box (Lasso) */
+        #selection-box {
+            position: absolute;
+            border: 1px solid rgba(59, 130, 246, 0.8);
+            background-color: rgba(59, 130, 246, 0.15);
+            pointer-events: none;
+            z-index: 40;
+            display: none;
+        }
+
+        /* Glassmorphism utility */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+        }
+        .dark .glass-panel {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(12px);
+        }
+
+        /* Animations */
+        @keyframes pulse-red {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+            50% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+        }
+        .corrupted-glitch {
+            animation: pulse-red 2s infinite;
+        }
+
+        /* Prevent unwanted highlighting on drag */
+        .no-select {
+            user-select: none;
+            -webkit-user-select: none;
+        }
+    </style>
+</head>
+<body class="dark bg-osDark text-slate-100 font-sans h-screen overflow-hidden no-select antialiased flex flex-col">
+
+    <!-- TOP SYSTEM MENU / HEADER BAR -->
+    <header class="h-10 bg-slate-200 dark:bg-slate-900 border-b border-slate-300 dark:border-slate-800 flex items-center justify-between px-3 text-xs select-none z-30">
+        <div class="flex items-center space-x-3">
+            <span class="font-bold flex items-center gap-2 text-blue-600 dark:text-blue-400">
+                <i class="fa-solid fa-hard-drive text-sm"></i> OS Declutterer v3.4 Pro
+            </span>
+            <div class="h-4 w-px bg-slate-300 dark:bg-slate-700"></div>
+            <button id="menu-btn-shop" class="hover:bg-slate-300 dark:hover:bg-slate-800 px-2 py-1 rounded flex items-center gap-1">
+                <i class="fa-solid fa-shop text-amber-500"></i> Upgrades & Tools
+            </button>
+            <button id="menu-btn-rules" class="hover:bg-slate-300 dark:hover:bg-slate-800 px-2 py-1 rounded flex items-center gap-1">
+                <i class="fa-solid fa-wand-magic-sparkles text-purple-400"></i> Automation Rules
+            </button>
+            <button id="menu-btn-sandbox" class="hover:bg-slate-300 dark:hover:bg-slate-800 px-2 py-1 rounded flex items-center gap-1">
+                <i class="fa-solid fa-cubes text-emerald-400"></i> Sandbox Mode
+            </button>
+        </div>
+
+        <div class="flex items-center space-x-4">
+            <!-- Data Credits / Bytes -->
+            <div class="flex items-center gap-1.5 bg-slate-300 dark:bg-slate-800 px-2.5 py-1 rounded-full text-amber-500 font-mono font-semibold">
+                <i class="fa-solid fa-coins"></i>
+                <span id="player-credits">1,250</span> <span class="text-[10px] text-slate-400">BYTES</span>
+            </div>
+
+            <!-- Level Selector / Sector Display -->
+            <select id="level-select" class="bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded px-2 py-0.5 text-xs font-semibold focus:outline-none">
+                <option value="1">Sector C: Downloads Chaos</option>
+                <option value="2">Sector D: Legacy Backups (2012-2020)</option>
+                <option value="3">Sector E: Rogue AI Server Vault</option>
+                <option value="4">Sector F: Corrupted Cloud Storage</option>
+            </select>
+
+            <!-- Audio & Theme Toggles -->
+            <button id="toggle-audio" class="p-1.5 hover:bg-slate-300 dark:hover:bg-slate-800 rounded text-slate-600 dark:text-slate-300" title="Toggle Sound">
+                <i class="fa-solid fa-volume-high" id="audio-icon"></i>
+            </button>
+            <button id="toggle-theme" class="p-1.5 hover:bg-slate-300 dark:hover:bg-slate-800 rounded text-slate-600 dark:text-slate-300" title="Toggle Theme">
+                <i class="fa-solid fa-moon" id="theme-icon"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN OS CONTAINER -->
+    <div class="flex-1 flex overflow-hidden relative">
+
+        <!-- FILE EXPLORER MAIN WINDOW -->
+        <div class="flex-1 flex flex-col bg-slate-50 dark:bg-slate-900 overflow-hidden">
+
+            <!-- EXPLORER TOOLBAR & BREADCRUMBS -->
+            <div class="p-2 border-b border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-950 flex flex-col gap-2">
+                <!-- Top Navigation Row -->
+                <div class="flex items-center justify-between gap-2">
+                    <div class="flex items-center gap-1">
+                        <button id="nav-back" class="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded disabled:opacity-40"><i class="fa-solid fa-arrow-left"></i></button>
+                        <button id="nav-forward" class="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded disabled:opacity-40"><i class="fa-solid fa-arrow-right"></i></button>
+                        <button id="nav-up" class="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded"><i class="fa-solid fa-arrow-up"></i></button>
+                        <button id="nav-refresh" class="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded"><i class="fa-solid fa-rotate-right"></i></button>
+                    </div>
+
+                    <!-- Breadcrumbs path -->
+                    <div id="breadcrumbs" class="flex-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded px-3 py-1 flex items-center gap-1 text-xs font-mono overflow-x-auto">
+                        <!-- Dynamic path renders here -->
+                    </div>
+
+                    <!-- Search Input -->
+                    <div class="relative w-56">
+                        <i class="fa-solid fa-magnifying-glass absolute left-2.5 top-2 text-slate-400 text-xs"></i>
+                        <input type="text" id="search-input" placeholder="Search sector files..." class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded pl-8 pr-3 py-1 text-xs focus:outline-none focus:border-blue-500">
+                    </div>
+                </div>
+
+                <!-- Utilities Toolbar Row -->
+                <div class="flex items-center justify-between gap-2 pt-1 border-t border-slate-200 dark:border-slate-800/60 text-xs">
+                    <div class="flex items-center gap-2">
+                        <button id="tool-auto-sort" class="px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded flex items-center gap-1.5 font-medium shadow-sm transition">
+                            <i class="fa-solid fa-bolt"></i> Auto-Organize
+                        </button>
+                        <button id="tool-duplicates" class="px-2.5 py-1 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 rounded flex items-center gap-1.5 font-medium">
+                            <i class="fa-solid fa-clone text-amber-500"></i> Find Duplicates
+                        </button>
+                        <button id="tool-antivirus" class="px-2.5 py-1 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 rounded flex items-center gap-1.5 font-medium">
+                            <i class="fa-solid fa-shield-halved text-emerald-500"></i> Virus Scan
+                        </button>
+                        <button id="tool-bulk-rename" class="px-2.5 py-1 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 rounded flex items-center gap-1.5 font-medium">
+                            <i class="fa-solid fa-i-cursor text-purple-400"></i> Bulk Rename
+                        </button>
+                        <button id="tool-defrag" class="px-2.5 py-1 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 rounded flex items-center gap-1.5 font-medium">
+                            <i class="fa-solid fa-boxes-packing text-cyan-400"></i> Defrag Sector
+                        </button>
+                    </div>
+
+                    <!-- View Options & Sort -->
+                    <div class="flex items-center gap-2">
+                        <label class="text-slate-400">Sort By:</label>
+                        <select id="sort-by-select" class="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded px-2 py-0.5 text-xs">
+                            <option value="name">Name</option>
+                            <option value="size">Size</option>
+                            <option value="type">Type / Extension</option>
+                            <option value="date">Date Modified</option>
+                        </select>
+                        <div class="flex border border-slate-300 dark:border-slate-700 rounded overflow-hidden">
+                            <button id="view-grid-btn" class="p-1 px-2 bg-slate-200 dark:bg-slate-800 text-blue-500"><i class="fa-solid fa-border-all"></i></button>
+                            <button id="view-list-btn" class="p-1 px-2 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400"><i class="fa-solid fa-list"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- WORKSPACE SPLIT (Sidebar + File Grid/List + Detail Pane) -->
+            <div class="flex-1 flex overflow-hidden relative">
+
+                <!-- SIDEBAR FILE TREE & QUICK LOCATIONS -->
+                <aside class="w-52 border-r border-slate-200 dark:border-slate-800 bg-slate-100/60 dark:bg-slate-950/60 flex flex-col p-2 select-none">
+                    <div class="text-[10px] font-bold tracking-wider text-slate-400 uppercase px-2 mb-1">Drives & System</div>
+                    <div id="drive-tree-root" class="space-y-0.5 text-xs">
+                        <!-- Dynamic Tree standard items -->
+                    </div>
+
+                    <div class="mt-4 text-[10px] font-bold tracking-wider text-slate-400 uppercase px-2 mb-1">Special Drop Vaults</div>
+                    <div class="space-y-1 text-xs">
+                        <div id="drop-recycle-bin" class="p-2 rounded flex items-center justify-between border border-dashed border-red-500/40 bg-red-500/5 hover:bg-red-500/10 transition cursor-pointer">
+                            <span class="flex items-center gap-2 text-red-500 font-medium">
+                                <i class="fa-solid fa-trash-can"></i> Recycle Bin
+                            </span>
+                            <span id="trash-count-badge" class="text-[10px] bg-red-500 text-white rounded-full px-1.5 py-0.2">0</span>
+                        </div>
+                        <div id="drop-quarantine" class="p-2 rounded flex items-center justify-between border border-dashed border-emerald-500/40 bg-emerald-500/5 hover:bg-emerald-500/10 transition cursor-pointer">
+                            <span class="flex items-center gap-2 text-emerald-500 font-medium">
+                                <i class="fa-solid fa-shield-virus"></i> Virus Vault
+                            </span>
+                            <span id="quarantine-count-badge" class="text-[10px] bg-emerald-500 text-white rounded-full px-1.5 py-0.2">0</span>
+                        </div>
+                    </div>
+
+                    <!-- Level Objectives Box -->
+                    <div class="mt-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded p-2.5 text-xs shadow-sm">
+                        <div class="font-bold flex items-center justify-between text-blue-500 mb-1.5">
+                            <span><i class="fa-solid fa-bullseye"></i> Sector Goals</span>
+                            <span id="goals-percent" class="font-mono text-[10px]">0%</span>
+                        </div>
+                        <ul id="goals-list" class="space-y-1.5 text-[11px] text-slate-600 dark:text-slate-300">
+                            <!-- Dynamic Objectives populated here -->
+                        </ul>
+                    </div>
+                </aside>
+
+                <!-- FILE DISPLAY AREA (GRID / LIST VIEW) -->
+                <main id="file-viewport" class="flex-1 p-4 overflow-y-auto relative bg-white dark:bg-slate-900/50" tabindex="0">
+                    <!-- Dynamic File Container -->
+                    <div id="file-container" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 min-h-full content-start">
+                        <!-- Files / Folders rendered dynamically -->
+                    </div>
+
+                    <!-- Lasso Drag Selection Box Overlay -->
+                    <div id="selection-box"></div>
+                </main>
+
+                <!-- FILE DETAIL / PREVIEW SIDEBAR PANE -->
+                <aside id="preview-pane" class="w-64 border-l border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-3 flex flex-col text-xs overflow-y-auto">
+                    <div class="text-[10px] font-bold tracking-wider text-slate-400 uppercase mb-2">Inspector Pane</div>
+                    
+                    <div id="preview-content-empty" class="flex-1 flex flex-col items-center justify-center text-slate-400 text-center p-4">
+                        <i class="fa-solid fa-file-circle-question text-4xl mb-2 opacity-50"></i>
+                        <p>Select a file to view detailed metadata, visual preview, and actions.</p>
+                    </div>
+
+                    <div id="preview-content" class="hidden flex-col h-full space-y-3">
+                        <!-- Icon & Main Info -->
+                        <div class="p-3 bg-white dark:bg-slate-900 rounded border border-slate-200 dark:border-slate-800 flex flex-col items-center text-center">
+                            <div id="preview-icon" class="text-5xl my-2"></div>
+                            <div id="preview-filename" class="font-bold text-sm truncate w-full"></div>
+                            <div id="preview-filetype" class="text-[10px] text-slate-400 font-mono"></div>
+                        </div>
+
+                        <!-- Dynamic Visual Preview Box -->
+                        <div id="preview-visual-box" class="h-32 bg-slate-200 dark:bg-slate-900 rounded border border-slate-300 dark:border-slate-800 flex items-center justify-center p-2 overflow-hidden text-slate-400">
+                            <!-- Dynamic rendering (Image canvas, Audio wave, Code preview) -->
+                        </div>
+
+                        <!-- Metadata Details -->
+                        <div class="bg-white dark:bg-slate-900 rounded border border-slate-200 dark:border-slate-800 p-2.5 space-y-1.5 text-[11px]">
+                            <div class="flex justify-between"><span class="text-slate-400">Size:</span> <span id="meta-size" class="font-mono"></span></div>
+                            <div class="flex justify-between"><span class="text-slate-400">Modified:</span> <span id="meta-date" class="font-mono"></span></div>
+                            <div class="flex justify-between"><span class="text-slate-400">Status:</span> <span id="meta-status" class="font-semibold"></span></div>
+                            <div class="flex justify-between"><span class="text-slate-400">Hash MD5:</span> <span id="meta-hash" class="font-mono text-[9px] truncate max-w-[110px]"></span></div>
+                        </div>
+
+                        <!-- File Tags & Notes -->
+                        <div class="bg-white dark:bg-slate-900 rounded border border-slate-200 dark:border-slate-800 p-2.5 space-y-1">
+                            <span class="text-[10px] text-slate-400 font-bold uppercase">Tags</span>
+                            <div id="meta-tags-container" class="flex flex-wrap gap-1">
+                                <!-- Tags -->
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="mt-auto space-y-1.5 pt-2">
+                            <button id="btn-preview-delete" class="w-full py-1.5 bg-red-600 hover:bg-red-500 text-white rounded font-medium text-xs flex items-center justify-center gap-1.5">
+                                <i class="fa-solid fa-trash"></i> Move to Bin
+                            </button>
+                            <button id="btn-preview-quarantine" class="w-full py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded font-medium text-xs flex items-center justify-center gap-1.5">
+                                <i class="fa-solid fa-shield-virus"></i> Quarantine Virus
+                            </button>
+                        </div>
+                    </div>
+                </aside>
+
+            </div>
+
+            <!-- STATUS BAR & DRIVE CAPACITY GAUGE -->
+            <footer class="h-8 bg-slate-200 dark:bg-slate-950 border-t border-slate-300 dark:border-slate-800 px-3 flex items-center justify-between text-xs select-none">
+                <div class="flex items-center space-x-4">
+                    <span id="status-selection-count" class="text-slate-500 dark:text-slate-400">0 items selected</span>
+                    <span class="text-slate-400">|</span>
+                    <span id="status-total-count" class="text-slate-500 dark:text-slate-400">Total: 0 files</span>
+                </div>
+
+                <!-- Drive Usage Progress Bar -->
+                <div class="flex items-center space-x-3 w-72">
+                    <span class="text-[11px] font-semibold text-slate-500">Sector Storage:</span>
+                    <div class="flex-1 bg-slate-300 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden flex">
+                        <div id="drive-gauge-bar" class="bg-blue-500 h-full transition-all duration-500" style="width: 75%;"></div>
+                    </div>
+                    <span id="drive-gauge-text" class="font-mono text-[11px] font-bold w-12 text-right">75%</span>
+                </div>
+            </footer>
+
+        </div>
+
+    </div>
+
+    <!-- CONTEXT MENU (Right Click) -->
+    <div id="context-menu" class="hidden absolute z-50 w-48 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded shadow-xl text-xs py-1">
+        <button id="ctx-open" class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex items-center gap-2"><i class="fa-solid fa-folder-open w-4"></i> Open</button>
+        <button id="ctx-rename" class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex items-center gap-2"><i class="fa-solid fa-i-cursor w-4"></i> Rename</button>
+        <button id="ctx-compress" class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex items-center gap-2"><i class="fa-solid fa-file-zipper w-4"></i> Compress (.zip)</button>
+        <div class="my-1 border-t border-slate-200 dark:border-slate-800"></div>
+        <button id="ctx-scan" class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex items-center gap-2"><i class="fa-solid fa-shield-virus w-4 text-emerald-500"></i> Scan for Virus</button>
+        <button id="ctx-quarantine" class="w-full text-left px-3 py-1.5 hover:bg-blue-600 hover:text-white flex items-center gap-2"><i class="fa-solid fa-vault w-4 text-amber-500"></i> Send to Vault</button>
+        <div class="my-1 border-t border-slate-200 dark:border-slate-800"></div>
+        <button id="ctx-delete" class="w-full text-left px-3 py-1.5 hover:bg-red-600 hover:text-white text-red-500 flex items-center gap-2"><i class="fa-solid fa-trash w-4"></i> Delete File</button>
+    </div>
+
+    <!-- MODAL POPUPS / UTILITY WINDOWS -->
+
+    <!-- 1. BULK RENAME MODAL -->
+    <div id="modal-bulk-rename" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 w-full max-w-md rounded-xl p-5 shadow-2xl space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-2">
+                <h3 class="font-bold flex items-center gap-2 text-purple-400"><i class="fa-solid fa-i-cursor"></i> Bulk File Renamer</h3>
+                <button class="close-modal text-slate-400 hover:text-slate-100"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="space-y-3 text-xs">
+                <div>
+                    <label class="block text-slate-400 mb-1">Prefix String:</label>
+                    <input id="rename-prefix" type="text" placeholder="e.g. Cleaned_" class="w-full bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded p-2 text-xs focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-slate-400 mb-1">Find Text / Regex:</label>
+                    <input id="rename-find" type="text" placeholder="e.g. copy|_temp" class="w-full bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded p-2 text-xs focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-slate-400 mb-1">Replace With:</label>
+                    <input id="rename-replace" type="text" placeholder="e.g. 2026" class="w-full bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded p-2 text-xs focus:outline-none">
+                </div>
+                <div class="flex items-center gap-2">
+                    <input id="rename-numbered" type="checkbox" class="rounded">
+                    <label for="rename-numbered">Append Auto-Increment Index (_01, _02)</label>
+                </div>
+            </div>
+            <div class="flex justify-end gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+                <button class="close-modal px-3 py-1.5 bg-slate-200 dark:bg-slate-800 rounded">Cancel</button>
+                <button id="btn-apply-bulk-rename" class="px-4 py-1.5 bg-purple-600 hover:bg-purple-500 text-white rounded font-medium">Apply Bulk Rename</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. AUTOMATION RULES ENGINE MODAL -->
+    <div id="modal-rules" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 w-full max-w-lg rounded-xl p-5 shadow-2xl space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-2">
+                <h3 class="font-bold flex items-center gap-2 text-purple-400"><i class="fa-solid fa-wand-magic-sparkles"></i> Automated Rules Engine</h3>
+                <button class="close-modal text-slate-400 hover:text-slate-100"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <p class="text-xs text-slate-400">Set conditions to automatically route files into designated target folders.</p>
+
+            <div class="space-y-3 text-xs bg-slate-100 dark:bg-slate-950 p-3 rounded border border-slate-200 dark:border-slate-800">
+                <div class="font-semibold text-slate-300">New Rule Pipeline:</div>
+                <div class="grid grid-cols-3 gap-2">
+                    <select id="rule-if-type" class="bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded p-1.5">
+                        <option value="ext">Extension equals</option>
+                        <option value="size_gt">Size greater than (MB)</option>
+                        <option value="name_contains">Name contains</option>
+                    </select>
+                    <input id="rule-val" type="text" placeholder="e.g. mp3 or 10" class="bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded p-1.5">
+                    <select id="rule-action" class="bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded p-1.5">
+                        <option value="Move to /Music">Move to /Music</option>
+                        <option value="Move to /Pictures">Move to /Pictures</option>
+                        <option value="Move to /Documents">Move to /Documents</option>
+                        <option value="Move to /Archives">Move to /Archives</option>
+                        <option value="Delete to Recycle Bin">Delete to Bin</option>
+                    </select>
+                </div>
+                <button id="btn-add-rule" class="w-full py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded font-medium"><i class="fa-solid fa-plus"></i> Add Rule to Active List</button>
+            </div>
+
+            <!-- Active Rules Container -->
+            <div class="space-y-1.5 text-xs">
+                <div class="font-semibold text-slate-400">Active Sorting Pipelines:</div>
+                <div id="active-rules-list" class="max-h-36 overflow-y-auto space-y-1">
+                    <!-- Dynamic rules list -->
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+                <button class="close-modal px-3 py-1.5 bg-slate-200 dark:bg-slate-800 rounded">Close</button>
+                <button id="btn-execute-rules" class="px-4 py-1.5 bg-purple-600 hover:bg-purple-500 text-white rounded font-medium"><i class="fa-solid fa-play"></i> Run All Rules Now</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. UPGRADES & TECH SHOP MODAL -->
+    <div id="modal-shop" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 w-full max-w-2xl rounded-xl p-5 shadow-2xl space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-2">
+                <h3 class="font-bold flex items-center gap-2 text-amber-500 text-base"><i class="fa-solid fa-shop"></i> IT Administrator Tech Upgrade Shop</h3>
+                <button class="close-modal text-slate-400 hover:text-slate-100"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 text-xs" id="shop-items-grid">
+                <!-- Dynamically populated shop items -->
+            </div>
+
+            <div class="flex justify-between items-center pt-2 border-t border-slate-200 dark:border-slate-800">
+                <div class="text-xs font-mono text-amber-500 font-semibold">Available Bytes: <span id="shop-bytes-val">1250</span></div>
+                <button class="close-modal px-4 py-1.5 bg-slate-200 dark:bg-slate-800 rounded">Done</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. URGENT BOSS / SYSTEM POPUP ALERT -->
+    <div id="boss-popup" class="hidden fixed bottom-12 right-6 w-80 bg-slate-900 border-2 border-amber-500 rounded-lg shadow-2xl p-4 z-50 text-xs space-y-3 animate-bounce">
+        <div class="flex items-center justify-between text-amber-500 font-bold border-b border-slate-800 pb-1.5">
+            <span class="flex items-center gap-1.5"><i class="fa-solid fa-triangle-exclamation"></i> URGENT OS TASK</span>
+            <span id="boss-timer" class="font-mono text-red-400">00:45</span>
+        </div>
+        <div id="boss-msg" class="text-slate-300">
+            "The Boss needs 'budget2024.xlsx' moved to /Documents immediately!"
+        </div>
+        <div class="flex justify-end gap-2 pt-1">
+            <button id="boss-dismiss-btn" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 rounded text-slate-300">Dismiss</button>
+        </div>
+    </div>
+
+    <!-- AUDIO SYNTHESIS & MAIN ENGINE SCRIPT -->
+    <script>
+        /* ==========================================================================
+           1. AUDIO SYNTHESIZER (Web Audio API)
+           ========================================================================== */
+        class SoundEngine {
+            constructor() {
+                this.ctx = null;
+                this.enabled = true;
+            }
+
+            init() {
+                if (!this.ctx) {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            }
+
+            playTone(freq, type = 'sine', duration = 0.1, vol = 0.1) {
+                if (!this.enabled) return;
+                this.init();
+                try {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = type;
+                    osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                    gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.00001, this.ctx.currentTime + duration);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + duration);
+                } catch (e) {}
+            }
+
+            click() { this.playTone(800, 'sine', 0.04, 0.05); }
+            select() { this.playTone(1200, 'triangle', 0.05, 0.05); }
+            trash() { this.playTone(150, 'sawtooth', 0.2, 0.15); }
+            success() {
+                this.playTone(523.25, 'sine', 0.1, 0.1);
+                setTimeout(() => this.playTone(659.25, 'sine', 0.1, 0.1), 100);
+                setTimeout(() => this.playTone(783.99, 'sine', 0.15, 0.1), 200);
+            }
+            virusAlert() {
+                this.playTone(300, 'sawtooth', 0.15, 0.2);
+                setTimeout(() => this.playTone(200, 'sawtooth', 0.2, 0.2), 150);
+            }
+        }
+
+        const audio = new SoundEngine();
+
+        /* ==========================================================================
+           2. GAME DATA, STATE & SECTOR GENERATOR
+           ========================================================================== */
+        const FILE_TYPES = {
+            png: { cat: 'image', icon: 'fa-file-image text-emerald-400', color: '#10b981' },
+            jpg: { cat: 'image', icon: 'fa-file-image text-emerald-400', color: '#10b981' },
+            gif: { cat: 'image', icon: 'fa-file-image text-teal-400', color: '#14b8a6' },
+            pdf: { cat: 'doc', icon: 'fa-file-pdf text-red-400', color: '#f87171' },
+            docx: { cat: 'doc', icon: 'fa-file-word text-blue-400', color: '#60a5fa' },
+            txt: { cat: 'doc', icon: 'fa-file-lines text-slate-400', color: '#94a3b8' },
+            xlsx: { cat: 'doc', icon: 'fa-file-excel text-emerald-500', color: '#10b981' },
+            mp3: { cat: 'audio', icon: 'fa-file-audio text-amber-400', color: '#fbbf24' },
+            wav: { cat: 'audio', icon: 'fa-file-audio text-amber-400', color: '#fbbf24' },
+            mp4: { cat: 'video', icon: 'fa-file-video text-purple-400', color: '#c084fc' },
+            js: { cat: 'code', icon: 'fa-file-code text-yellow-400', color: '#facc15' },
+            html: { cat: 'code', icon: 'fa-file-code text-orange-400', color: '#fb923c' },
+            py: { cat: 'code', icon: 'fa-file-code text-blue-500', color: '#3b82f6' },
+            zip: { cat: 'archive', icon: 'fa-file-zipper text-indigo-400', color: '#818cf8' },
+            virus: { cat: 'malware', icon: 'fa-bug text-red-500 corrupted-glitch', color: '#ef4444' },
+            tmp: { cat: 'trash', icon: 'fa-file-circle-xmark text-slate-500', color: '#64748b' }
+        };
+
+        const state = {
+            credits: 1250,
+            currentSector: 1,
+            currentPath: ['Drive C:', 'Downloads'],
+            selectedFileIds: new Set(),
+            viewMode: 'grid', // 'grid' or 'list'
+            sortBy: 'name',
+            searchFilter: '',
+            recycleBin: [],
+            quarantineVault: [],
+            rules: [
+                { ifType: 'ext', val: 'png', action: 'Move to /Pictures' },
+                { ifType: 'ext', val: 'mp3', action: 'Move to /Music' }
+            ],
+            shopUpgrades: {
+                scanner: false,
+                autoBot: false,
+                defrag: false,
+                regexSearch: false
+            },
+            fileSystem: {}, // Dynamic sector file trees
+            goals: []
+        };
+
+        /* Sector Dynamic Generators */
+        function generateSectorFiles(sectorId) {
+            const files = [];
+            const addFile = (id, name, ext, sizeMB, parentFolder, isCorrupt = false, isVirus = false) => {
+                files.push({
+                    id: id || Math.random().toString(36).substr(2, 9),
+                    name: name,
+                    ext: ext,
+                    size: sizeMB,
+                    parent: parentFolder,
+                    isCorrupt: isCorrupt,
+                    isVirus: isVirus,
+                    isLocked: false,
+                    modified: new Date(Date.now() - Math.floor(Math.random() * 10000000000)).toLocaleDateString(),
+                    hash: Math.random().toString(36).substring(2, 10) + Math.random().toString(36).substring(2, 10)
+                });
+            };
+
+            if (sectorId === 1) {
+                // Sector C: Downloads Chaos
+                const folders = ['Downloads', 'Pictures', 'Music', 'Documents', 'Archives'];
+                folders.forEach(f => {
+                    files.push({ id: f.toLowerCase(), name: f, isFolder: true, parent: 'Drive C:' });
+                });
+
+                // Add clutter into Downloads
+                for (let i = 1; i <= 15; i++) {
+                    addFile(`img_${i}`, `Photo_RAW_${1000 + i}`, 'png', (Math.random() * 8 + 1).toFixed(1), 'Downloads');
+                    addFile(`song_${i}`, `Track_Mix_${i}`, 'mp3', (Math.random() * 5 + 3).toFixed(1), 'Downloads');
+                    addFile(`doc_${i}`, `Report_Draft_${i}`, 'pdf', (Math.random() * 2 + 0.5).toFixed(1), 'Downloads');
+                    addFile(`tmp_${i}`, `temp_cache_${i}`, 'tmp', (Math.random() * 15 + 5).toFixed(1), 'Downloads');
+                }
+                // Add a few viruses disguised
+                addFile(`v1`, `free_game_installer`, 'virus', 45, 'Downloads', false, true);
+                addFile(`v2`, `crypto_miner_setup`, 'virus', 12, 'Downloads', false, true);
+
+            } else if (sectorId === 2) {
+                // Sector D: Legacy Backups
+                files.push({ id: 'backups', name: 'Backups_2015', isFolder: true, parent: 'Drive D:' });
+                files.push({ id: 'pictures', name: 'Pictures', isFolder: true, parent: 'Drive D:' });
+                files.push({ id: 'documents', name: 'Documents', isFolder: true, parent: 'Drive D:' });
+
+                for (let i = 1; i <= 20; i++) {
+                    addFile(`leg_${i}`, `Backup_Archive_${2010 + (i % 10)}_${i}`, 'zip', (Math.random() * 120 + 20).toFixed(1), 'Backups_2015');
+                    addFile(`dup_${i}`, `Family_Vacation_${i}`, 'jpg', 4.2, 'Backups_2015');
+                    // Create duplicates
+                    addFile(`dup_copy_${i}`, `Family_Vacation_${i}_(1)`, 'jpg', 4.2, 'Backups_2015');
+                }
+            } else if (sectorId === 3) {
+                // Sector E: Rogue AI Server Vault
+                files.push({ id: 'system_core', name: 'System_Core', isFolder: true, parent: 'Drive E:' });
+                files.push({ id: 'quarantine_sector', name: 'Quarantine_Sector', isFolder: true, parent: 'Drive E:' });
+
+                for (let i = 1; i <= 25; i++) {
+                    addFile(`ai_${i}`, `ai_neural_weights_${i}`, 'py', (Math.random() * 50 + 10).toFixed(1), 'System_Core');
+                    addFile(`corrupt_${i}`, `glitched_kernel_dmp_${i}`, 'tmp', (Math.random() * 10 + 1).toFixed(1), 'System_Core', true);
+                    if (i % 3 === 0) {
+                        addFile(`trojan_${i}`, `ai_override_exploit_${i}`, 'virus', 88, 'System_Core', false, true);
+                    }
+                }
+            } else {
+                // Sector F: Cloud Storage Sector
+                files.push({ id: 'cloud_sync', name: 'Cloud_Sync', isFolder: true, parent: 'Drive F:' });
+                for (let i = 1; i <= 30; i++) {
+                    addFile(`cloud_${i}`, `Cloud_Doc_Sync_${i}`, 'docx', (Math.random() * 5 + 1).toFixed(1), 'Cloud_Sync');
+                    if (i % 2 === 0) addFile(`c_tmp_${i}`, `~lock_cloud_${i}`, 'tmp', 0.1, 'Cloud_Sync');
+                }
+            }
+
+            return files;
+        }
+
+        function loadSectorGoals(sectorId) {
+            if (sectorId === 1) {
+                state.goals = [
+                    { text: 'Move all .png files to /Pictures', key: 'png_moved', done: false },
+                    { text: 'Move all .mp3 files to /Music', key: 'mp3_moved', done: false },
+                    { text: 'Delete all .tmp files to Recycle Bin', key: 'tmp_deleted', done: false },
+                    { text: 'Quarantine 2 viruses', key: 'viruses_quarantined', done: false }
+                ];
+            } else if (sectorId === 2) {
+                state.goals = [
+                    { text: 'Clear duplicate files from Backups', key: 'duplicates_cleared', done: false },
+                    { text: 'Free up 200MB space', key: 'space_freed', done: false }
+                ];
+            } else {
+                state.goals = [
+                    { text: 'Isolate corrupted AI files', key: 'ai_corrupt_cleared', done: false },
+                    { text: 'Quarantine rogue virus files', key: 'ai_viruses_cleared', done: false }
+                ];
+            }
+        }
+
+        /* ==========================================================================
+           3. UI RENDER ENGINE
+           ========================================================================== */
+        function renderExplorer() {
+            const container = document.getElementById('file-container');
+            container.innerHTML = '';
+
+            const currentParentName = state.currentPath[state.currentPath.length - 1];
+            let currentFiles = state.fileSystem[state.currentSector] || [];
+
+            // Filter by parent folder
+            let filesToDisplay = currentFiles.filter(f => f.parent === currentParentName);
+
+            // Apply Search Filter
+            if (state.searchFilter.trim() !== '') {
+                const query = state.searchFilter.toLowerCase();
+                filesToDisplay = currentFiles.filter(f => f.name.toLowerCase().includes(query) || f.ext?.toLowerCase().includes(query));
+            }
+
+            // Apply Sorting
+            filesToDisplay.sort((a, b) => {
+                if (a.isFolder && !b.isFolder) return -1;
+                if (!a.isFolder && b.isFolder) return 1;
+                if (state.sortBy === 'name') return a.name.localeCompare(b.name);
+                if (state.sortBy === 'size') return (b.size || 0) - (a.size || 0);
+                if (state.sortBy === 'type') return (a.ext || '').localeCompare(b.ext || '');
+                return 0;
+            });
+
+            // Update View Container Grid/List Style
+            if (state.viewMode === 'grid') {
+                container.className = "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 min-h-full content-start";
+            } else {
+                container.className = "flex flex-col space-y-1 w-full";
+            }
+
+            // Render File Items
+            filesToDisplay.forEach(file => {
+                const isSelected = state.selectedFileIds.has(file.id);
+                const itemEl = document.createElement('div');
+                itemEl.dataset.id = file.id;
+
+                if (state.viewMode === 'grid') {
+                    itemEl.className = `p-3 rounded-lg border flex flex-col items-center justify-center cursor-pointer transition select-none relative group ${
+                        isSelected 
+                            ? 'bg-blue-500/20 border-blue-500 text-blue-400' 
+                            : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-blue-400/50'
+                    } ${file.isCorrupt ? 'corrupted-glitch border-red-500/50' : ''}`;
+
+                    const iconInfo = file.isFolder 
+                        ? { icon: 'fa-folder text-amber-400', color: '#f59e0b' } 
+                        : (FILE_TYPES[file.ext] || { icon: 'fa-file text-slate-400', color: '#94a3b8' });
+
+                    itemEl.innerHTML = `
+                        <div class="text-4xl my-1"><i class="fa-solid ${iconInfo.icon}"></i></div>
+                        <span class="text-xs font-medium text-center truncate w-full mt-1">${file.name}${file.ext ? '.' + file.ext : ''}</span>
+                        <span class="text-[10px] text-slate-400 font-mono">${file.isFolder ? 'Folder' : file.size + ' MB'}</span>
+                        ${file.isVirus ? '<span class="absolute top-1 right-1 text-[9px] bg-red-600 text-white px-1 rounded">VIRUS</span>' : ''}
+                    `;
+                } else {
+                    // List View
+                    itemEl.className = `px-3 py-2 rounded border flex items-center justify-between cursor-pointer transition text-xs ${
+                        isSelected 
+                            ? 'bg-blue-500/20 border-blue-500 text-blue-400' 
+                            : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-blue-400/50'
+                    }`;
+
+                    const iconInfo = file.isFolder 
+                        ? { icon: 'fa-folder text-amber-400' } 
+                        : (FILE_TYPES[file.ext] || { icon: 'fa-file text-slate-400' });
+
+                    itemEl.innerHTML = `
+                        <div class="flex items-center gap-2.5 flex-1 truncate">
+                            <i class="fa-solid ${iconInfo.icon} text-base"></i>
+                            <span class="font-medium truncate">${file.name}${file.ext ? '.' + file.ext : ''}</span>
+                        </div>
+                        <div class="w-24 text-slate-400 font-mono text-[11px]">${file.isFolder ? 'Folder' : file.size + ' MB'}</div>
+                        <div class="w-28 text-slate-400 text-[11px]">${file.modified || 'Today'}</div>
+                    `;
+                }
+
+                // Attach Interactions
+                itemEl.addEventListener('click', (e) => handleFileClick(e, file));
+                itemEl.addEventListener('dblclick', () => handleFileDoubleClick(file));
+                itemEl.addEventListener('contextmenu', (e) => handleContextMenu(e, file));
+
+                // Make Draggable
+                itemEl.draggable = true;
+                itemEl.addEventListener('dragstart', (e) => handleDragStart(e, file));
+
+                if (file.isFolder) {
+                    itemEl.addEventListener('dragover', (e) => e.preventDefault());
+                    itemEl.addEventListener('drop', (e) => handleFolderDrop(e, file));
+                }
+
+                container.appendChild(itemEl);
+            });
+
+            renderBreadcrumbs();
+            renderDriveTree();
+            updateStatusBar();
+            checkSectorObjectives();
+        }
+
+        function renderBreadcrumbs() {
+            const bc = document.getElementById('breadcrumbs');
+            bc.innerHTML = '';
+            state.currentPath.forEach((folder, idx) => {
+                const btn = document.createElement('button');
+                btn.className = "hover:text-blue-400 font-medium transition flex items-center gap-1";
+                btn.innerHTML = `${idx === 0 ? '<i class="fa-solid fa-hard-drive"></i>' : '<i class="fa-solid fa-angle-right text-slate-500 text-[10px]"></i>'} ${folder}`;
+                btn.onclick = () => {
+                    state.currentPath = state.currentPath.slice(0, idx + 1);
+                    renderExplorer();
+                };
+                bc.appendChild(btn);
+            });
+        }
+
+        function renderDriveTree() {
+            const root = document.getElementById('drive-tree-root');
+            root.innerHTML = '';
+
+            const driveNames = ['Drive C:', 'Drive D:', 'Drive E:', 'Drive F:'];
+            driveNames.forEach((d, idx) => {
+                const isCurrentDrive = state.currentPath[0] === d;
+                const div = document.createElement('div');
+                div.className = `p-1.5 rounded flex items-center gap-2 cursor-pointer transition ${isCurrentDrive ? 'bg-blue-600 text-white font-semibold' : 'hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-300'}`;
+                div.innerHTML = `<i class="fa-solid fa-hard-drive"></i> <span>${d}</span>`;
+                div.onclick = () => {
+                    state.currentSector = idx + 1;
+                    document.getElementById('level-select').value = idx + 1;
+                    state.currentPath = [d];
+                    loadSectorGoals(state.currentSector);
+                    renderExplorer();
+                };
+                root.appendChild(div);
+            });
+        }
+
+        function renderPreviewPane() {
+            const emptyPane = document.getElementById('preview-content-empty');
+            const previewContent = document.getElementById('preview-content');
+
+            if (state.selectedFileIds.size !== 1) {
+                emptyPane.classList.remove('hidden');
+                previewContent.classList.add('hidden');
+                return;
+            }
+
+            const fileId = Array.from(state.selectedFileIds)[0];
+            const currentFiles = state.fileSystem[state.currentSector] || [];
+            const file = currentFiles.find(f => f.id === fileId);
+
+            if (!file) return;
+
+            emptyPane.classList.add('hidden');
+            previewContent.classList.remove('hidden');
+
+            const iconInfo = file.isFolder 
+                ? { icon: 'fa-folder text-amber-400' } 
+                : (FILE_TYPES[file.ext] || { icon: 'fa-file text-slate-400' });
+
+            document.getElementById('preview-icon').innerHTML = `<i class="fa-solid ${iconInfo.icon}"></i>`;
+            document.getElementById('preview-filename').innerText = file.name + (file.ext ? '.' + file.ext : '');
+            document.getElementById('preview-filetype').innerText = file.isFolder ? 'SYSTEM FOLDER' : `${file.ext.toUpperCase()} FILE`;
+            document.getElementById('meta-size').innerText = file.isFolder ? '--' : file.size + ' MB';
+            document.getElementById('meta-date').innerText = file.modified || '2026-10-23';
+            document.getElementById('meta-status').innerText = file.isVirus ? 'DANGER / VIRUS' : (file.isCorrupt ? 'CORRUPTED' : 'HEALTHY');
+            document.getElementById('meta-status').className = `font-semibold ${file.isVirus ? 'text-red-500' : 'text-emerald-400'}`;
+            document.getElementById('meta-hash').innerText = file.hash || 'e99a18c4281';
+
+            // Visual Box Dynamic Previews
+            const visualBox = document.getElementById('preview-visual-box');
+            visualBox.innerHTML = '';
+
+            if (FILE_TYPES[file.ext]?.cat === 'image') {
+                visualBox.innerHTML = `<div class="w-full h-full bg-emerald-900/20 flex flex-col items-center justify-center border border-emerald-500/30 rounded text-emerald-400">
+                    <i class="fa-solid fa-image text-3xl mb-1"></i>
+                    <span class="text-[10px] font-mono">Image Preview Canvas</span>
+                </div>`;
+            } else if (FILE_TYPES[file.ext]?.cat === 'audio') {
+                visualBox.innerHTML = `<div class="w-full h-full bg-amber-900/20 flex flex-col items-center justify-center border border-amber-500/30 rounded text-amber-400 p-2">
+                    <i class="fa-solid fa-wave-square text-2xl mb-1 animate-pulse"></i>
+                    <span class="text-[10px] font-mono">Audio Waveform Visualizer</span>
+                </div>`;
+            } else if (FILE_TYPES[file.ext]?.cat === 'code') {
+                visualBox.innerHTML = `<pre class="text-[9px] font-mono text-yellow-300 bg-slate-950 p-2 rounded w-full h-full overflow-hidden">
+function sanitize() {
+  console.log("Cleaning sector file...");
+  return true;
+}</pre>`;
+            } else {
+                visualBox.innerHTML = `<div class="text-[10px] text-slate-400 text-center"><i class="fa-solid fa-eye-slash text-2xl mb-1 block"></i> No Live Preview</div>`;
+            }
+
+            // Button handlers inside preview pane
+            document.getElementById('btn-preview-delete').onclick = () => moveSelectedToBin();
+            document.getElementById('btn-preview-quarantine').onclick = () => moveSelectedToQuarantine();
+        }
+
+        function updateStatusBar() {
+            const currentFiles = state.fileSystem[state.currentSector] || [];
+            const currentParentName = state.currentPath[state.currentPath.length - 1];
+            const folderFiles = currentFiles.filter(f => f.parent === currentParentName);
+
+            document.getElementById('status-selection-count').innerText = `${state.selectedFileIds.size} items selected`;
+            document.getElementById('status-total-count').innerText = `Total: ${folderFiles.length} files`;
+
+            // Drive Capacity Calculation
+            const totalSize = currentFiles.reduce((acc, f) => acc + (parseFloat(f.size) || 0), 0);
+            const capacity = 1000; // 1000 MB limit
+            const usedPct = Math.min(100, Math.round((totalSize / capacity) * 100));
+
+            const gaugeBar = document.getElementById('drive-gauge-bar');
+            gaugeBar.style.width = `${usedPct}%`;
+            gaugeBar.className = `h-full transition-all duration-500 ${usedPct > 85 ? 'bg-red-500' : (usedPct > 60 ? 'bg-amber-500' : 'bg-blue-500')}`;
+            document.getElementById('drive-gauge-text').innerText = `${usedPct}%`;
+
+            document.getElementById('player-credits').innerText = state.credits.toLocaleString();
+        }
+
+        /* ==========================================================================
+           4. SECTOR OBJECTIVES & PROGRESSION ENGINE
+           ========================================================================== */
+        function checkSectorObjectives() {
+            const currentFiles = state.fileSystem[state.currentSector] || [];
+            let completedCount = 0;
+
+            state.goals.forEach(goal => {
+                if (goal.key === 'png_moved') {
+                    const pngInDownloads = currentFiles.some(f => f.ext === 'png' && f.parent === 'Downloads');
+                    goal.done = !pngInDownloads;
+                } else if (goal.key === 'mp3_moved') {
+                    const mp3InDownloads = currentFiles.some(f => f.ext === 'mp3' && f.parent === 'Downloads');
+                    goal.done = !mp3InDownloads;
+                } else if (goal.key === 'tmp_deleted') {
+                    const tmpExists = currentFiles.some(f => f.ext === 'tmp');
+                    goal.done = !tmpExists;
+                } else if (goal.key === 'viruses_quarantined') {
+                    const virusInFiles = currentFiles.some(f => f.isVirus);
+                    goal.done = !virusInFiles;
+                }
+                if (goal.done) completedCount++;
+            });
+
+            // Render Goals Sidebar Box
+            const goalsList = document.getElementById('goals-list');
+            goalsList.innerHTML = '';
+            state.goals.forEach(g => {
+                const li = document.createElement('li');
+                li.className = "flex items-center gap-1.5";
+                li.innerHTML = `<i class="fa-solid ${g.done ? 'fa-circle-check text-emerald-400' : 'fa-circle text-slate-600'} text-[10px]"></i> <span class="${g.done ? 'line-through text-slate-500' : ''}">${g.text}</span>`;
+                goalsList.appendChild(li);
+            });
+
+            const total = state.goals.length || 1;
+            const pct = Math.round((completedCount / total) * 100);
+            document.getElementById('goals-percent').innerText = `${pct}%`;
+
+            if (pct === 100 && !state.goals.completedAwarded) {
+                state.goals.completedAwarded = true;
+                audio.success();
+                state.credits += 500;
+                alert('🎉 SECTOR CLEANED UP PERFECTLY! Earned +500 Bytes Bonus!');
+                updateStatusBar();
+            }
+        }
+
+        /* ==========================================================================
+           5. INTERACTION HANDLERS (Click, Drag/Drop, Multi-Select)
+           ========================================================================== */
+        function handleFileClick(e, file) {
+            audio.click();
+            if (e.ctrlKey || e.metaKey) {
+                if (state.selectedFileIds.has(file.id)) {
+                    state.selectedFileIds.delete(file.id);
+                } else {
+                    state.selectedFileIds.add(file.id);
+                }
+            } else {
+                state.selectedFileIds.clear();
+                state.selectedFileIds.add(file.id);
+            }
+            renderExplorer();
+            renderPreviewPane();
+        }
+
+        function handleFileDoubleClick(file) {
+            if (file.isFolder) {
+                state.currentPath.push(file.name);
+                state.selectedFileIds.clear();
+                renderExplorer();
+                renderPreviewPane();
+            }
+        }
+
+        function handleContextMenu(e, file) {
+            e.preventDefault();
+            if (!state.selectedFileIds.has(file.id)) {
+                state.selectedFileIds.clear();
+                state.selectedFileIds.add(file.id);
+                renderExplorer();
+            }
+            const menu = document.getElementById('context-menu');
+            menu.style.left = `${e.clientX}px`;
+            menu.style.top = `${e.clientY}px`;
+            menu.classList.remove('hidden');
+        }
+
+        // Drag & Drop
+        function handleDragStart(e, file) {
+            if (!state.selectedFileIds.has(file.id)) {
+                state.selectedFileIds.clear();
+                state.selectedFileIds.add(file.id);
+                renderExplorer();
+            }
+            e.dataTransfer.setData('text/plain', JSON.stringify(Array.from(state.selectedFileIds)));
+        }
+
+        function handleFolderDrop(e, targetFolder) {
+            e.preventDefault();
+            const raw = e.dataTransfer.getData('text/plain');
+            if (!raw) return;
+            const fileIds = JSON.parse(raw);
+
+            const currentFiles = state.fileSystem[state.currentSector] || [];
+            currentFiles.forEach(f => {
+                if (fileIds.includes(f.id) && f.id !== targetFolder.id) {
+                    f.parent = targetFolder.name;
+                }
+            });
+
+            audio.select();
+            state.selectedFileIds.clear();
+            renderExplorer();
+        }
+
+        /* Move to Recycle Bin / Quarantine */
+        function moveSelectedToBin() {
+            const currentFiles = state.fileSystem[state.currentSector] || [];
+            state.fileSystem[state.currentSector] = currentFiles.filter(f => {
+                if (state.selectedFileIds.has(f.id)) {
+                    state.recycleBin.push(f);
+                    return false;
+                }
+                return true;
+            });
+            audio.trash();
+            state.selectedFileIds.clear();
+            document.getElementById('trash-count-badge').innerText = state.recycleBin.length;
+            renderExplorer();
+            renderPreviewPane();
+        }
+
+        function moveSelectedToQuarantine() {
+            const currentFiles = state.fileSystem[state.currentSector] || [];
+            state.fileSystem[state.currentSector] = currentFiles.filter(f => {
+                if (state.selectedFileIds.has(f.id)) {
+                    state.quarantineVault.push(f);
+                    return false;
+                }
+                return true;
+            });
+            audio.select();
+            state.selectedFileIds.clear();
+            document.getElementById('quarantine-count-badge').innerText = state.quarantineVault.length;
+            renderExplorer();
+            renderPreviewPane();
+        }
+
+        /* ==========================================================================
+           6. AUTOMATION RULES & UTILITY TOOLS ENGINE
+           ========================================================================== */
+        function runAutomatedRules() {
+            let movedCount = 0;
+            const currentFiles = state.fileSystem[state.currentSector] || [];
+
+            state.rules.forEach(rule => {
+                currentFiles.forEach(f => {
+                    if (f.isFolder) return;
+
+                    let match = false;
+                    if (rule.ifType === 'ext' && f.ext === rule.val) match = true;
+                    if (rule.ifType === 'name_contains' && f.name.includes(rule.val)) match = true;
+                    if (rule.ifType === 'size_gt' && f.size > parseFloat(rule.val)) match = true;
+
+                    if (match) {
+                        if (rule.action.startsWith('Move to /')) {
+                            const targetFolder = rule.action.replace('Move to /', '');
+                            f.parent = targetFolder;
+                            movedCount++;
+                        } else if (rule.action === 'Delete to Recycle Bin') {
+                            state.recycleBin.push(f);
+                            movedCount++;
+                        }
+                    }
+                });
+            });
+
+            // Cleanup deleted items if any rule deleted them
+            state.fileSystem[state.currentSector] = currentFiles.filter(f => !state.recycleBin.includes(f));
+
+            audio.success();
+            alert(`⚡ Automation Pipeline Executed! Re-routed ${movedCount} files automatically.`);
+            renderExplorer();
+        }
+
+        /* ==========================================================================
+           7. INIT & EVENT LISTENERS
+           ========================================================================== */
+        window.addEventListener('DOMContentLoaded', () => {
+            // Initialize file system drives
+            [1, 2, 3, 4].forEach(s => {
+                state.fileSystem[s] = generateSectorFiles(s);
+            });
+
+            loadSectorGoals(1);
+            renderExplorer();
+
+            // Context menu dismissal
+            window.addEventListener('click', () => {
+                document.getElementById('context-menu').classList.add('hidden');
+            });
+
+            // Level Selector
+            document.getElementById('level-select').addEventListener('change', (e) => {
+                const sec = parseInt(e.target.value);
+                state.currentSector = sec;
+                const dMap = { 1: 'Drive C:', 2: 'Drive D:', 3: 'Drive E:', 4: 'Drive F:' };
+                state.currentPath = [dMap[sec]];
+                loadSectorGoals(sec);
+                renderExplorer();
+            });
+
+            // Search Filter
+            document.getElementById('search-input').addEventListener('input', (e) => {
+                state.searchFilter = e.target.value;
+                renderExplorer();
+            });
+
+            // View toggle buttons
+            document.getElementById('view-grid-btn').onclick = () => {
+                state.viewMode = 'grid';
+                document.getElementById('view-grid-btn').className = "p-1 px-2 bg-slate-200 dark:bg-slate-800 text-blue-500";
+                document.getElementById('view-list-btn').className = "p-1 px-2 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400";
+                renderExplorer();
+            };
+            document.getElementById('view-list-btn').onclick = () => {
+                state.viewMode = 'list';
+                document.getElementById('view-list-btn').className = "p-1 px-2 bg-slate-200 dark:bg-slate-800 text-blue-500";
+                document.getElementById('view-grid-btn').className = "p-1 px-2 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400";
+                renderExplorer();
+            };
+
+            // Audio & Theme Toggles
+            document.getElementById('toggle-audio').onclick = () => {
+                audio.enabled = !audio.enabled;
+                document.getElementById('audio-icon').className = audio.enabled ? "fa-solid fa-volume-high" : "fa-solid fa-volume-xmark text-red-400";
+            };
+            document.getElementById('toggle-theme').onclick = () => {
+                document.body.classList.toggle('dark');
+            };
+
+            // Tools Bar Triggers
+            document.getElementById('tool-auto-sort').onclick = () => runAutomatedRules();
+
+            document.getElementById('tool-duplicates').onclick = () => {
+                const currentFiles = state.fileSystem[state.currentSector] || [];
+                const names = {};
+                let dupsFound = 0;
+                currentFiles.forEach(f => {
+                    if (names[f.name]) dupsFound++;
+                    else names[f.name] = true;
+                });
+                alert(`🔍 Duplicate File Scanner: Found ${dupsFound} potential polymorphic file duplicates in this sector.`);
+            };
+
+            document.getElementById('tool-antivirus').onclick = () => {
+                audio.virusAlert();
+                const currentFiles = state.fileSystem[state.currentSector] || [];
+                const viruses = currentFiles.filter(f => f.isVirus);
+                alert(`🛡️ Antivirus Deep Scan: Detected ${viruses.length} malicious executable scripts!`);
+            };
+
+            // Context Menu Actions
+            document.getElementById('ctx-delete').onclick = () => moveSelectedToBin();
+            document.getElementById('ctx-quarantine').onclick = () => moveSelectedToQuarantine();
+
+            // Modals Logic
+            document.getElementById('menu-btn-rules').onclick = () => {
+                document.getElementById('modal-rules').classList.remove('hidden');
+            };
+            document.getElementById('menu-btn-shop').onclick = () => {
+                renderShopModal();
+                document.getElementById('modal-shop').classList.remove('hidden');
+            };
+            document.getElementById('tool-bulk-rename').onclick = () => {
+                document.getElementById('modal-bulk-rename').classList.remove('hidden');
+            };
+
+            document.querySelectorAll('.close-modal').forEach(btn => {
+                btn.onclick = () => {
+                    document.querySelectorAll('[id^="modal-"]').forEach(m => m.classList.add('hidden'));
+                };
+            });
+
+            // Rules Engine Modal Add
+            document.getElementById('btn-add-rule').onclick = () => {
+                const type = document.getElementById('rule-if-type').value;
+                const val = document.getElementById('rule-val').value;
+                const act = document.getElementById('rule-action').value;
+                if (val) {
+                    state.rules.push({ ifType: type, val: val, action: act });
+                    renderRulesList();
+                }
+            };
+            document.getElementById('btn-execute-rules').onclick = () => {
+                document.getElementById('modal-rules').classList.add('hidden');
+                runAutomatedRules();
+            };
+
+            // Bulk Rename Action
+            document.getElementById('btn-apply-bulk-rename').onclick = () => {
+                const prefix = document.getElementById('rename-prefix').value;
+                const findText = document.getElementById('rename-find').value;
+                const replaceText = document.getElementById('rename-replace').value;
+                const currentFiles = state.fileSystem[state.currentSector] || [];
+
+                let count = 0;
+                currentFiles.forEach((f, idx) => {
+                    if (state.selectedFileIds.has(f.id)) {
+                        if (findText) f.name = f.name.replace(new RegExp(findText, 'g'), replaceText);
+                        if (prefix) f.name = prefix + f.name;
+                        count++;
+                    }
+                });
+
+                document.getElementById('modal-bulk-rename').classList.add('hidden');
+                renderExplorer();
+                alert(`✏️ Bulk Renamed ${count} selected files.`);
+            };
+
+            // Trigger Random Boss Urgent Request Popup
+            setTimeout(() => {
+                document.getElementById('boss-popup').classList.remove('hidden');
+                audio.virusAlert();
+            }, 12000);
+
+            document.getElementById('boss-dismiss-btn').onclick = () => {
+                document.getElementById('boss-popup').classList.add('hidden');
+            };
+
+            renderRulesList();
+        });
+
+        function renderRulesList() {
+            const list = document.getElementById('active-rules-list');
+            list.innerHTML = '';
+            state.rules.forEach((r, idx) => {
+                const div = document.createElement('div');
+                div.className = "bg-white dark:bg-slate-900 p-2 rounded border border-slate-200 dark:border-slate-800 flex justify-between items-center text-[11px]";
+                div.innerHTML = `<span>IF <b>${r.ifType}</b> == "${r.val}" &rarr; <span class="text-purple-400 font-semibold">${r.action}</span></span>
+                <button class="text-red-400 hover:text-red-300" onclick="deleteRule(${idx})"><i class="fa-solid fa-trash"></i></button>`;
+                list.appendChild(div);
+            });
+        }
+
+        function deleteRule(idx) {
+            state.rules.splice(idx, 1);
+            renderRulesList();
+        }
+
+        function renderShopModal() {
+            document.getElementById('shop-bytes-val').innerText = state.credits.toLocaleString();
+            const grid = document.getElementById('shop-items-grid');
+            grid.innerHTML = `
+                <div class="p-3 bg-slate-100 dark:bg-slate-800/60 rounded border border-slate-200 dark:border-slate-700 flex justify-between items-center">
+                    <div>
+                        <div class="font-bold text-slate-200">Deep Defrag Bot</div>
+                        <div class="text-[10px] text-slate-400">Automatically packs storage sectors.</div>
+                    </div>
+                    <button class="px-3 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded">500 B</button>
+                </div>
+                <div class="p-3 bg-slate-100 dark:bg-slate-800/60 rounded border border-slate-200 dark:border-slate-700 flex justify-between items-center">
+                    <div>
+                        <div class="font-bold text-slate-200">Cloud Storage Shield</div>
+                        <div class="text-[10px] text-slate-400">Prevents corrupted file cascades.</div>
+                    </div>
+                    <button class="px-3 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded">800 B</button>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>
