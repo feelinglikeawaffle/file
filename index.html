@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Digital Declutterer - OS File Sorting Game</title>
+    <title>Digital Declutterer / File Sorting Master</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome Icons -->
@@ -39,7 +39,7 @@
         ::-webkit-scrollbar-thumb { background: rgba(156, 163, 175, 0.3); border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: rgba(156, 163, 175, 0.6); }
 
-        /* Selection Box (Lasso) */
+        /* Lasso Box Selection */
         #selection-box {
             position: absolute;
             border: 1px dashed #3b82f6;
@@ -49,14 +49,12 @@
             display: none;
         }
 
-        /* Glitch & Hazard Animations */
+        /* Hazard & Glitch Animations */
         @keyframes hazard-pulse {
             0%, 100% { border-color: rgba(239, 68, 68, 0.9); box-shadow: 0 0 12px rgba(239, 68, 68, 0.5); }
             50% { border-color: rgba(245, 158, 11, 0.9); box-shadow: 0 0 18px rgba(245, 158, 11, 0.7); }
         }
-        .hazard-active {
-            animation: hazard-pulse 1s infinite alternate;
-        }
+        .hazard-active { animation: hazard-pulse 1s infinite alternate; }
 
         @keyframes glitch-shake {
             0% { transform: translate(0, 0); }
@@ -69,34 +67,40 @@
         .corrupted-item {
             animation: glitch-shake 0.3s infinite;
             border-color: #ef4444 !important;
-            background-color: rgba(239, 68, 68, 0.15) !important;
+            background-color: rgba(239, 68, 68, 0.18) !important;
         }
 
-        .no-select {
-            user-select: none;
-            -webkit-user-select: none;
-        }
-
-        /* Drag target highlight */
+        .no-select { user-select: none; -webkit-user-select: none; }
         .drag-over-folder {
             outline: 2px dashed #3b82f6 !important;
             background-color: rgba(59, 130, 246, 0.25) !important;
         }
+
+        /* OS Themes */
+        body.theme-cyberpunk {
+            --bg-dark: #0d0221;
+            --surface: #02010a;
+            --accent: #ff007f;
+        }
+        body.theme-win98 {
+            font-family: 'Tahoma', sans-serif;
+            background-color: #008080 !important;
+        }
     </style>
 </head>
-<body class="dark bg-osDark text-slate-100 font-sans h-screen overflow-hidden no-select antialiased flex flex-col select-none">
+<body id="app-body" class="dark bg-osDark text-slate-100 font-sans h-screen overflow-hidden no-select antialiased flex flex-col select-none">
 
     <!-- TOP HEADER UTILITY BAR -->
     <header class="h-12 bg-slate-900 border-b border-slate-800 flex items-center justify-between px-4 text-xs z-30 shadow-lg">
         <div class="flex items-center space-x-4">
             <span class="font-extrabold flex items-center gap-2 text-blue-400 text-sm tracking-wide">
                 <i class="fa-solid fa-folder-tree text-amber-400 text-base"></i> DIGITAL DECLUTTERER
-                <span class="text-[10px] bg-blue-500/20 text-blue-300 border border-blue-500/30 px-2 py-0.5 rounded font-mono font-bold">OS OS v5.0</span>
+                <span class="text-[10px] bg-blue-500/20 text-blue-300 border border-blue-500/30 px-2 py-0.5 rounded font-mono font-bold">OS MASTER v6.0</span>
             </span>
             
             <div class="h-4 w-px bg-slate-800"></div>
 
-            <!-- Header Action Buttons -->
+            <!-- Action Buttons -->
             <button id="btn-shop" class="hover:bg-slate-800 px-3 py-1.5 rounded-lg flex items-center gap-2 text-amber-400 font-semibold transition border border-amber-500/20">
                 <i class="fa-solid fa-shop"></i> Tech Shop
             </button>
@@ -104,14 +108,14 @@
                 <i class="fa-solid fa-object-group"></i> Select Misplaced
             </button>
             <button id="btn-auto-sort" class="hover:bg-blue-600/20 px-3 py-1.5 rounded-lg flex items-center gap-2 text-blue-400 font-semibold transition border border-blue-500/20">
-                <i class="fa-solid fa-wand-magic-sparkles"></i> Auto-Sort Safe
+                <i class="fa-solid fa-wand-magic-sparkles"></i> Auto-Sort Safe Files
             </button>
         </div>
 
         <div class="flex items-center space-x-4">
             <!-- Global Sorting Progress Tracker -->
             <div class="flex items-center gap-3 bg-slate-950 border border-slate-800 px-3.5 py-1.5 rounded-xl shadow-inner">
-                <span class="text-slate-400 font-medium">Sorted:</span>
+                <span class="text-slate-400 font-medium">System Sorted:</span>
                 <div class="w-32 bg-slate-900 h-2.5 rounded-full overflow-hidden border border-slate-800 flex">
                     <div id="global-progress-bar" class="bg-emerald-500 h-full transition-all duration-300" style="width: 0%;"></div>
                 </div>
@@ -125,7 +129,7 @@
             </div>
 
             <!-- Sound Toggle -->
-            <button id="btn-audio-toggle" class="p-2 hover:bg-slate-800 rounded-lg text-slate-300 transition">
+            <button id="btn-audio-toggle" class="p-2 hover:bg-slate-800 rounded-lg text-slate-300 transition" title="Toggle SFX">
                 <i id="audio-icon" class="fa-solid fa-volume-high"></i>
             </button>
         </div>
@@ -137,7 +141,7 @@
             <button id="nav-up" class="px-2.5 py-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-lg text-slate-300 font-semibold flex items-center gap-1.5 transition" title="Go to Parent Folder">
                 <i class="fa-solid fa-arrow-up text-blue-400"></i> Up
             </button>
-            <button id="nav-refresh" class="p-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-lg text-slate-400 hover:text-white transition">
+            <button id="nav-refresh" class="p-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-lg text-slate-400 hover:text-white transition" title="Refresh Directory">
                 <i class="fa-solid fa-rotate-right"></i>
             </button>
         </div>
@@ -150,10 +154,10 @@
         <!-- Search Bar -->
         <div class="relative w-64">
             <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-500"></i>
-            <input type="text" id="search-input" placeholder="Search current directory..." class="w-full bg-slate-900 border border-slate-800 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-blue-500 font-mono">
+            <input type="text" id="search-input" placeholder="Search files in system..." class="w-full bg-slate-900 border border-slate-800 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-blue-500 font-mono">
         </div>
 
-        <!-- View Toggle -->
+        <!-- View Toggle Buttons -->
         <div class="flex border border-slate-800 rounded-lg overflow-hidden bg-slate-900">
             <button id="view-grid-btn" class="p-1.5 px-3 bg-blue-600 text-white font-semibold"><i class="fa-solid fa-border-all"></i> Grid</button>
             <button id="view-list-btn" class="p-1.5 px-3 text-slate-400 hover:text-slate-200 font-semibold"><i class="fa-solid fa-list"></i> List</button>
@@ -163,17 +167,23 @@
     <!-- MAIN OS WORKSPACE -->
     <div class="flex-1 flex overflow-hidden relative">
 
-        <!-- SIDEBAR DIRECTORY TREE (PERMANENTLY EXPANDED FOR EASY 1-CLICK DRAG & DROP) -->
-        <aside class="w-64 border-r border-slate-800 bg-slate-950/90 flex flex-col p-3 select-none overflow-y-auto space-y-4">
+        <!-- SIDEBAR DIRECTORY TREE (PERMANENTLY EXPANDED FOR DRAG & DROP TARGETS) -->
+        <aside class="w-72 border-r border-slate-800 bg-slate-950/90 flex flex-col p-3 select-none overflow-y-auto space-y-4">
             <div>
-                <div class="text-[10px] font-extrabold tracking-wider text-slate-500 uppercase px-2 mb-2">System Drives</div>
-                <div id="drive-selector-list" class="space-y-1">
+                <div class="text-[10px] font-extrabold tracking-wider text-slate-500 uppercase px-2 mb-2 flex justify-between items-center">
+                    <span>System Drives</span>
+                    <i class="fa-solid fa-server text-slate-600"></i>
+                </div>
+                <div id="drive-selector-list" class="space-y-1 font-mono text-xs">
                     <!-- Dynamic Drive Items -->
                 </div>
             </div>
 
             <div>
-                <div class="text-[10px] font-extrabold tracking-wider text-slate-500 uppercase px-2 mb-2">Target Folders (Drag Here)</div>
+                <div class="text-[10px] font-extrabold tracking-wider text-slate-500 uppercase px-2 mb-2 flex justify-between items-center">
+                    <span>Target Folder Tree (Drag Here)</span>
+                    <i class="fa-solid fa-folder-tree text-slate-600"></i>
+                </div>
                 <div id="target-folder-tree" class="space-y-1 font-mono text-xs">
                     <!-- Dynamic Folder Tree -->
                 </div>
@@ -181,18 +191,12 @@
 
             <div>
                 <div class="text-[10px] font-extrabold tracking-wider text-slate-500 uppercase px-2 mb-2">Disposal Vaults</div>
-                <div class="space-y-1 text-xs">
+                <div class="space-y-1.5 text-xs font-mono">
                     <div id="drop-trash-bin" class="p-2.5 rounded-xl border border-dashed border-red-500/40 bg-red-500/5 hover:bg-red-500/15 transition cursor-pointer flex items-center justify-between">
                         <span class="flex items-center gap-2 text-red-400 font-semibold">
                             <i class="fa-solid fa-trash-can text-base"></i> Recycle Bin
                         </span>
-                        <span id="trash-count-badge" class="text-[10px] bg-red-600 text-white font-mono rounded-full px-2 py-0.5 font-bold">0</span>
-                    </div>
-                    <div id="drop-quarantine" class="p-2.5 rounded-xl border border-dashed border-emerald-500/40 bg-emerald-500/5 hover:bg-emerald-500/15 transition cursor-pointer flex items-center justify-between">
-                        <span class="flex items-center gap-2 text-emerald-400 font-semibold">
-                            <i class="fa-solid fa-shield-virus text-base"></i> Quarantine Vault
-                        </span>
-                        <span id="quarantine-count-badge" class="text-[10px] bg-emerald-600 text-white font-mono rounded-full px-2 py-0.5 font-bold">0</span>
+                        <span id="trash-count-badge" class="text-[10px] bg-red-600 text-white rounded-full px-2 py-0.5 font-bold">0</span>
                     </div>
                 </div>
             </div>
@@ -204,13 +208,13 @@
                         <span class="flex items-center gap-1.5"><i class="fa-solid fa-clock"></i> VIP BOUNTY</span>
                         <span id="bounty-timer" class="font-mono text-rose-400 font-bold">30s</span>
                     </div>
-                    <div id="bounty-description" class="text-slate-300 font-medium leading-snug">Move 5 .py scripts to /Code!</div>
-                    <div class="text-[10px] text-amber-300/80 font-mono font-semibold">+300 BYTES REWARD</div>
+                    <div id="bounty-description" class="text-slate-300 font-medium leading-snug">Move 5 .py scripts to /Code/Python_Scripts!</div>
+                    <div class="text-[10px] text-amber-300/80 font-mono font-semibold">+400 BYTES REWARD</div>
                 </div>
             </div>
         </aside>
 
-        <!-- MAIN FILE VIEWPORT (NO PREVIEW PANE FOR MAX SPEED) -->
+        <!-- MAIN FILE VIEWPORT -->
         <main id="file-viewport" class="flex-1 p-4 overflow-y-auto relative bg-slate-900/40 focus:outline-none" tabindex="0">
             
             <!-- EXECUTABLE HAZARD WARNING BANNER -->
@@ -218,11 +222,11 @@
                 <div class="flex items-center gap-3">
                     <i class="fa-solid fa-triangle-exclamation text-xl text-red-400 animate-bounce"></i>
                     <div>
-                        <span class="font-bold text-red-300 uppercase tracking-wide">Unsafe Executables / Scripts Detected!</span>
-                        <p class="text-red-200/80 text-[11px]">Misplaced .exe and .py files are active hazard risks! Move them to <b>/Programs</b> or <b>/Code</b> before they corrupt!</p>
+                        <span class="font-bold text-red-300 uppercase tracking-wide">Misplaced Executables / Scripts Active!</span>
+                        <p class="text-red-200/80 text-[11px]">.exe and .py files moved outside <b>Safe Staging</b> into wrong directories are actively ticking toward corruption!</p>
                     </div>
                 </div>
-                <span id="hazard-countdown-badge" class="font-mono font-extrabold text-sm bg-red-900/80 border border-red-500/50 px-3 py-1 rounded-lg text-red-200">RISK ACTIVE</span>
+                <span id="hazard-countdown-badge" class="font-mono font-extrabold text-xs bg-red-900/80 border border-red-500/50 px-3 py-1 rounded-lg text-red-200">HAZARDS TICKING</span>
             </div>
 
             <!-- Files Grid/List Container -->
@@ -246,7 +250,7 @@
         </div>
 
         <div class="flex items-center gap-2 text-slate-400 text-[11px]">
-            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span>
+            <span id="shield-indicator-dot" class="w-2.5 h-2.5 rounded-full bg-slate-600 inline-block"></span>
             <span id="shield-status-text">Execution Shield: INACTIVE</span>
         </div>
     </footer>
@@ -254,9 +258,9 @@
     <!-- CONTEXT MENU (RIGHT CLICK) -->
     <div id="context-menu" class="hidden absolute z-50 w-52 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl text-xs py-1.5 text-slate-200">
         <button id="ctx-open" class="w-full text-left px-3.5 py-1.5 hover:bg-blue-600 hover:text-white flex items-center gap-2.5 font-medium"><i class="fa-solid fa-folder-open text-amber-400 w-4"></i> Open Folder</button>
-        <button id="ctx-move-correct" class="w-full text-left px-3.5 py-1.5 hover:bg-blue-600 hover:text-white flex items-center gap-2.5 font-medium"><i class="fa-solid fa-circle-check text-emerald-400 w-4"></i> Move to Belonging Target</button>
+        <button id="ctx-move-correct" class="w-full text-left px-3.5 py-1.5 hover:bg-blue-600 hover:text-white flex items-center gap-2.5 font-medium"><i class="fa-solid fa-circle-check text-emerald-400 w-4"></i> Auto-Move to Proper Folder</button>
         <div class="my-1 border-t border-slate-800"></div>
-        <button id="ctx-delete" class="w-full text-left px-3.5 py-1.5 hover:bg-red-600 hover:text-white text-red-400 flex items-center gap-2.5 font-medium"><i class="fa-solid fa-trash w-4"></i> Move to Recycle Bin</button>
+        <button id="ctx-delete" class="w-full text-left px-3.5 py-1.5 hover:bg-red-600 hover:text-white text-red-400 flex items-center gap-2.5 font-medium"><i class="fa-solid fa-trash w-4"></i> Send to Recycle Bin</button>
     </div>
 
     <!-- TECH SHOP MODAL -->
@@ -278,13 +282,13 @@
         </div>
     </div>
 
-    <!-- POPUP ALERT NOTIFICATION CONTAINER -->
+    <!-- POPUP NOTIFICATION CONTAINER -->
     <div id="popup-container" class="fixed bottom-12 right-6 space-y-3 z-50 pointer-events-none"></div>
 
     <!-- GAME ENGINE CODE -->
     <script>
         /* ==========================================================================
-           1. AUDIO ENGINE (Web Audio API Synthesizer)
+           1. AUDIO SYNTHESIZER ENGINE (Web Audio API)
            ========================================================================== */
         class AudioEngine {
             constructor() {
@@ -325,57 +329,50 @@
         const audio = new AudioEngine();
 
         /* ==========================================================================
-           2. TARGET FOLDER RULES & MEANINGFUL FILE DATA
+           2. TARGET DIRECTORIES & DEFINITIONS
            ========================================================================== */
+        const SAFE_STAGING_PATH = 'Drive C:/Downloads/Safe_Staging';
+
         const TARGET_FOLDERS = {
-            'Pictures': { exts: ['jpg', 'png', 'gif', 'svg'], icon: 'fa-file-image text-emerald-400', drive: 'Drive C:' },
-            'Documents': { exts: ['pdf', 'docx', 'txt', 'xlsx'], icon: 'fa-file-lines text-blue-400', drive: 'Drive C:' },
-            'Media': { exts: ['mp3', 'wav', 'mp4', 'avi'], icon: 'fa-file-audio text-amber-400', drive: 'Drive D:' },
-            'Programs': { exts: ['exe', 'msi'], icon: 'fa-file-zipper text-purple-400', drive: 'Drive C:' },
-            'Code': { exts: ['py', 'js', 'cpp', 'html'], icon: 'fa-file-code text-cyan-400', drive: 'Drive E:' }
+            'Documents': { drive: 'Drive C:', targetPath: 'Drive C:/Documents', icon: 'fa-file-lines text-blue-400' },
+            'Pictures': { drive: 'Drive C:', targetPath: 'Drive C:/Pictures', icon: 'fa-file-image text-emerald-400' },
+            'System Apps': { drive: 'Drive C:', targetPath: 'Drive C:/Programs/System_Apps', icon: 'fa-file-zipper text-purple-400' },
+            'Games': { drive: 'Drive C:', targetPath: 'Drive C:/Programs/Games', icon: 'fa-gamepad text-indigo-400' },
+            'Audio': { drive: 'Drive D:', targetPath: 'Drive D:/Audio', icon: 'fa-file-audio text-amber-400' },
+            'Video': { drive: 'Drive D:', targetPath: 'Drive D:/Video', icon: 'fa-file-video text-rose-400' },
+            'Python Scripts': { drive: 'Drive D:', targetPath: 'Drive D:/Code/Python_Scripts', icon: 'fa-file-code text-cyan-400' },
+            'Dev Tools': { drive: 'Drive D:', targetPath: 'Drive D:/Code/Dev_Tools', icon: 'fa-code text-teal-400' },
+            'Archives': { drive: 'Drive D:', targetPath: 'Drive D:/Archives', icon: 'fa-file-box text-orange-400' }
         };
 
-        const MEANINGFUL_FILES = [
-            // Pictures
-            { name: 'family_vacation_2024', ext: 'jpg', target: 'Pictures' },
-            { name: 'sunset_beach_selfie', ext: 'png', target: 'Pictures' },
-            { name: 'meme_cat_funny', ext: 'gif', target: 'Pictures' },
-            { name: 'company_logo_vector', ext: 'svg', target: 'Pictures' },
-            { name: 'birthday_party_photo', ext: 'jpg', target: 'Pictures' },
-            { name: 'landscape_mountain_view', ext: 'png', target: 'Pictures' },
+        const RAW_FILE_CATALOG = [
+            // Safe Staging EXEs (Start in Safe_Staging, target specific program subfolders)
+            { name: 'minecraft_launcher', ext: 'exe', targetKey: 'Games', isHazard: true },
+            { name: 'steam_client_setup', ext: 'exe', targetKey: 'Games', isHazard: true },
+            { name: 'calculator_plus', ext: 'exe', targetKey: 'System_Apps', isHazard: true },
+            { name: 'task_manager_pro', ext: 'exe', targetKey: 'System_Apps', isHazard: true },
+            { name: 'antivirus_scanner', ext: 'exe', targetKey: 'System_Apps', isHazard: true },
 
-            // Documents
-            { name: 'annual_tax_return_2025', ext: 'pdf', target: 'Documents' },
-            { name: 'project_proposal_draft', ext: 'docx', target: 'Documents' },
-            { name: 'grocery_shopping_list', ext: 'txt', target: 'Documents' },
-            { name: 'q3_financial_budget', ext: 'xlsx', target: 'Documents' },
-            { name: 'meeting_notes_march', ext: 'docx', target: 'Documents' },
-            { name: 'apartment_lease_agreement', ext: 'pdf', target: 'Documents' },
+            // Safe Staging PYs (Start in Safe_Staging, target code subfolders)
+            { name: 'data_scraper_bot', ext: 'py', targetKey: 'Python Scripts', isHazard: true },
+            { name: 'machine_learning_model', ext: 'py', targetKey: 'Python Scripts', isHazard: true },
+            { name: 'discord_auto_reply', ext: 'py', targetKey: 'Python Scripts', isHazard: true },
+            { name: 'compiler_toolchain', ext: 'py', targetKey: 'Dev Tools', isHazard: true },
 
-            // Media
-            { name: 'favorite_rock_song', ext: 'mp3', target: 'Media' },
-            { name: 'podcast_episode_12', ext: 'mp3', target: 'Media' },
-            { name: 'birthday_party_video', ext: 'mp4', target: 'Media' },
-            { name: 'guitar_solo_recording', ext: 'wav', target: 'Media' },
-            { name: 'family_reunion_movie', ext: 'avi', target: 'Media' },
+            // Regular Safe Files (Scattered across folders)
+            { name: 'q3_financial_report', ext: 'pdf', targetKey: 'Documents' },
+            { name: 'apartment_lease_2025', ext: 'docx', targetKey: 'Documents' },
+            { name: 'grocery_shopping_list', ext: 'txt', targetKey: 'Documents' },
+            { name: 'family_sunset_vacation', ext: 'png', targetKey: 'Pictures' },
+            { name: 'cat_meme_reaction', ext: 'gif', targetKey: 'Pictures' },
+            { name: 'lofi_chill_beats_loop', ext: 'mp3', targetKey: 'Audio' },
+            { name: 'podcast_interview_ep04', ext: 'wav', targetKey: 'Audio' },
+            { name: 'birthday_party_clip', ext: 'mp4', targetKey: 'Video' },
+            { name: 'old_project_backup', ext: 'zip', targetKey: 'Archives' },
 
-            // Programs (.exe hazard)
-            { name: 'game_installer_setup', ext: 'exe', target: 'Programs', isHazard: true },
-            { name: 'system_optimizer_v2', ext: 'msi', target: 'Programs', isHazard: true },
-            { name: 'video_editor_install', ext: 'exe', target: 'Programs', isHazard: true },
-            { name: 'web_browser_update', ext: 'exe', target: 'Programs', isHazard: true },
-
-            // Code (.py hazard)
-            { name: 'data_scraping_script', ext: 'py', target: 'Code', isHazard: true },
-            { name: 'main_backend_server', ext: 'py', target: 'Code', isHazard: true },
-            { name: 'interactive_webpage', ext: 'html', target: 'Code' },
-            { name: 'algorithm_sorting_demo', ext: 'cpp', target: 'Code' },
-            { name: 'automation_bot_helper', ext: 'py', target: 'Code', isHazard: true },
-
-            // Trash/Junk
-            { name: 'temp_cache_junk', ext: 'tmp', target: 'Trash' },
-            { name: 'error_crash_dump', ext: 'log', target: 'Trash' },
-            { name: 'system_backup_old', ext: 'bak', target: 'Trash' }
+            // Junk/Trash
+            { name: 'temp_crash_dump', ext: 'tmp', targetKey: 'Trash' },
+            { name: 'browser_cache_log', ext: 'log', targetKey: 'Trash' }
         ];
 
         /* ==========================================================================
@@ -383,15 +380,14 @@
            ========================================================================== */
         const state = {
             credits: 500,
-            currentPath: ['Drive C:', 'Downloads'],
+            currentPath: ['Drive C:', 'Downloads', 'Safe_Staging'],
             selectedIds: new Set(),
             viewMode: 'grid',
             searchQuery: '',
-            recycleBin: [],
-            quarantineVault: [],
             files: [],
+            recycleBin: [],
             executionShield: false,
-            autoSortBots: false,
+            graceDuration: 20, // 20 Seconds base grace period
             bounty: null
         };
 
@@ -399,33 +395,60 @@
         function initFileSystem() {
             state.files = [];
 
-            // Folders
-            const drives = ['Drive C:', 'Drive D:', 'Drive E:'];
-            drives.forEach(drive => {
-                state.files.push({ id: `folder_downloads_${drive}`, name: 'Downloads', isFolder: true, parent: drive });
-                state.files.push({ id: `folder_pictures_${drive}`, name: 'Pictures', isFolder: true, parent: drive });
-                state.files.push({ id: `folder_documents_${drive}`, name: 'Documents', isFolder: true, parent: drive });
-                state.files.push({ id: `folder_media_${drive}`, name: 'Media', isFolder: true, parent: drive });
-                state.files.push({ id: `folder_programs_${drive}`, name: 'Programs', isFolder: true, parent: drive });
-                state.files.push({ id: `folder_code_${drive}`, name: 'Code', isFolder: true, parent: drive });
+            // Core Folders Hierarchy
+            const folderStructure = [
+                { id: 'f_c_downloads', name: 'Downloads', drive: 'Drive C:', parentPath: 'Drive C:' },
+                { id: 'f_c_safe_staging', name: 'Safe_Staging', drive: 'Drive C:', parentPath: 'Drive C:/Downloads' },
+                { id: 'f_c_documents', name: 'Documents', drive: 'Drive C:', parentPath: 'Drive C:' },
+                { id: 'f_c_pictures', name: 'Pictures', drive: 'Drive C:', parentPath: 'Drive C:' },
+                { id: 'f_c_programs', name: 'Programs', drive: 'Drive C:', parentPath: 'Drive C:' },
+                { id: 'f_c_sysapps', name: 'System_Apps', drive: 'Drive C:', parentPath: 'Drive C:/Programs' },
+                { id: 'f_c_games', name: 'Games', drive: 'Drive C:', parentPath: 'Drive C:/Programs' },
+
+                { id: 'f_d_audio', name: 'Audio', drive: 'Drive D:', parentPath: 'Drive D:' },
+                { id: 'f_d_video', name: 'Video', drive: 'Drive D:', parentPath: 'Drive D:' },
+                { id: 'f_d_code', name: 'Code', drive: 'Drive D:', parentPath: 'Drive D:' },
+                { id: 'f_d_pyscripts', name: 'Python_Scripts', drive: 'Drive D:', parentPath: 'Drive D:/Code' },
+                { id: 'f_d_devtools', name: 'Dev_Tools', drive: 'Drive D:', parentPath: 'Drive D:/Code' },
+                { id: 'f_d_archives', name: 'Archives', drive: 'Drive D:', parentPath: 'Drive D:' },
+
+                { id: 'f_e_quarantine', name: 'Quarantine_Vault', drive: 'Drive E:', parentPath: 'Drive E:' },
+                { id: 'f_e_logs', name: 'Security_Logs', drive: 'Drive E:', parentPath: 'Drive E:' }
+            ];
+
+            folderStructure.forEach(f => {
+                state.files.push({
+                    id: f.id,
+                    name: f.name,
+                    isFolder: true,
+                    drive: f.drive,
+                    parentPath: f.parentPath
+                });
             });
 
-            // Populate messy initial files inside Drive C: / Downloads
-            MEANINGFUL_FILES.forEach((f, idx) => {
-                // Place most files in Downloads initially (making them misplaced!)
-                const parentFolder = (idx % 6 === 0) ? f.target : 'Downloads';
-                const parentDrive = 'Drive C:';
+            // Populate Files
+            RAW_FILE_CATALOG.forEach((f, idx) => {
+                let initialLocation = SAFE_STAGING_PATH;
+
+                // Non-hazard files scattered in Downloads or wrong folders
+                if (!f.isHazard) {
+                    initialLocation = (idx % 2 === 0) ? 'Drive C:/Downloads' : 'Drive C:/Documents';
+                }
+
+                const targetInfo = TARGET_FOLDERS[f.targetKey];
+                const finalTargetFolder = targetInfo ? targetInfo.targetPath : 'Recycle Bin';
 
                 state.files.push({
                     id: `file_${idx}_${Date.now()}`,
                     name: f.name,
                     ext: f.ext,
-                    target: f.target,
+                    targetKey: f.targetKey,
+                    targetPath: finalTargetFolder,
                     isHazard: f.isHazard || false,
+                    graceTimer: state.graceDuration,
                     isCorrupted: false,
-                    parent: parentFolder,
-                    drive: parentDrive,
-                    size: (Math.random() * 8 + 0.5).toFixed(1)
+                    currentPath: initialLocation,
+                    size: (Math.random() * 9 + 0.8).toFixed(1)
                 });
             });
 
@@ -433,45 +456,67 @@
         }
 
         /* ==========================================================================
-           4. CORRECTION CHECKING & HAZARD TIMERS
+           4. CORRECTION & HAZARD ENGINE
            ========================================================================== */
-        function isFileCorrectlyPlaced(file) {
-            if (file.isFolder) return true;
-            if (file.target === 'Trash') return false; // Junk belongs in Trash Bin
-            return file.parent === file.target;
+        function getFullPathString(pathArr) {
+            return pathArr.join('/');
         }
 
-        function checkHazardousExecutables() {
+        function isFileCorrectlySorted(file) {
+            if (file.isFolder) return true;
+            if (file.targetKey === 'Trash') return file.currentPath === 'Recycle Bin';
+            return file.currentPath === file.targetPath;
+        }
+
+        function tickHazardTimers() {
             if (state.executionShield) {
                 document.getElementById('hazard-warning-banner').classList.add('hidden');
+                document.getElementById('shield-indicator-dot').className = "w-2.5 h-2.5 rounded-full bg-emerald-400 inline-block animate-pulse";
+                document.getElementById('shield-status-text').innerText = 'Execution Shield: ACTIVE (100% Protection)';
+                document.getElementById('shield-status-text').className = 'text-emerald-400 font-bold';
                 return;
             }
 
-            // Find any .exe or .py files in wrong folders
-            const activeHazards = state.files.filter(f => !f.isFolder && f.isHazard && !isFileCorrectlyPlaced(f) && !f.isCorrupted);
+            let activeHazardsCount = 0;
+
+            state.files.forEach(f => {
+                if (!f.isFolder && f.isHazard) {
+                    const isSorted = isFileCorrectlySorted(f);
+                    const inSafeStaging = f.currentPath === SAFE_STAGING_PATH;
+
+                    // If outside Safe Staging and NOT in correct folder -> Timer Ticks!
+                    if (!isSorted && !inSafeStaging && !f.isCorrupted) {
+                        activeHazardsCount++;
+                        if (f.graceTimer > 0) {
+                            f.graceTimer -= 1;
+                        } else {
+                            // Timer expired! 25% chance per tick to corrupt
+                            if (Math.random() < 0.25) {
+                                f.isCorrupted = true;
+                                f.name = `[CORRUPTED]_${f.name}`;
+                                audio.corrupt();
+                                showPopupAlert(`☣️ CORRUPTION ALARM: Misplaced ${f.name}.${f.ext} has glitched out!`);
+                            }
+                        }
+                    } else if (inSafeStaging) {
+                        // Reset grace timer while safely staged
+                        f.graceTimer = state.graceDuration;
+                    }
+                }
+            });
 
             const banner = document.getElementById('hazard-warning-banner');
-            if (activeHazards.length > 0) {
+            if (activeHazardsCount > 0) {
                 banner.classList.remove('hidden');
-                document.getElementById('hazard-countdown-badge').innerText = `${activeHazards.length} HAZARD(S) ACTIVE`;
-
-                // Chance to corrupt an unsafe executable each interval
-                activeHazards.forEach(hazard => {
-                    if (Math.random() < 0.22) { // 22% corruption check
-                        hazard.isCorrupted = true;
-                        hazard.name = `[CORRUPTED]_${hazard.name}`;
-                        audio.corrupt();
-                        showPopupAlert(`💥 CORRUPTION ALARM: Misplaced ${hazard.name}.${hazard.ext} exploded into corrupted data!`);
-                    }
-                });
-                renderExplorer();
+                document.getElementById('hazard-countdown-badge').innerText = `${activeHazardsCount} HAZARD(S) RISK ACTIVE`;
             } else {
                 banner.classList.add('hidden');
             }
+
+            renderExplorer();
         }
 
-        /* Interval Timer for Hazard check */
-        setInterval(checkHazardousExecutables, 2500);
+        setInterval(tickHazardTimers, 1000);
 
         /* ==========================================================================
            5. UI RENDER ENGINE
@@ -480,16 +525,16 @@
             const container = document.getElementById('file-container');
             container.innerHTML = '';
 
-            const currentParent = state.currentPath[state.currentPath.length - 1];
-            let visibleFiles = state.files.filter(f => f.parent === currentParent);
+            const currentFullPath = getFullPathString(state.currentPath);
+            let visibleItems = state.files.filter(f => f.parentPath === currentFullPath || f.currentPath === currentFullPath);
 
             if (state.searchQuery.trim() !== '') {
                 const q = state.searchQuery.toLowerCase();
-                visibleFiles = state.files.filter(f => f.name.toLowerCase().includes(q) || f.ext?.toLowerCase().includes(q));
+                visibleItems = state.files.filter(f => f.name.toLowerCase().includes(q) || f.ext?.toLowerCase().includes(q));
             }
 
-            // Sort Folders first
-            visibleFiles.sort((a, b) => (b.isFolder ? 1 : 0) - (a.isFolder ? 1 : 0));
+            // Sort folders first
+            visibleItems.sort((a, b) => (b.isFolder ? 1 : 0) - (a.isFolder ? 1 : 0));
 
             if (state.viewMode === 'grid') {
                 container.className = "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3.5 min-h-full content-start";
@@ -497,14 +542,13 @@
                 container.className = "flex flex-col space-y-1.5 w-full";
             }
 
-            visibleFiles.forEach(file => {
-                const isSelected = state.selectedIds.has(file.id);
-                const isCorrect = isFileCorrectlyPlaced(file);
+            visibleItems.forEach(item => {
+                const isSelected = state.selectedIds.has(item.id);
                 const itemEl = document.createElement('div');
-                itemEl.dataset.id = file.id;
+                itemEl.dataset.id = item.id;
 
-                if (file.isFolder) {
-                    // FOLDER ROW / CARD (EASY 1-CLICK OPEN)
+                if (item.isFolder) {
+                    // FOLDER CARD (1-CLICK NAVIGATION)
                     itemEl.className = `p-3.5 rounded-xl border flex items-center gap-3 cursor-pointer transition select-none shadow-sm ${
                         isSelected 
                             ? 'bg-blue-600/30 border-blue-500 text-blue-200 ring-2 ring-blue-500/50' 
@@ -514,16 +558,16 @@
                     itemEl.innerHTML = `
                         <i class="fa-solid fa-folder text-2xl text-amber-400"></i>
                         <div class="flex-1 truncate">
-                            <div class="font-bold text-xs text-slate-100 truncate">${file.name}</div>
+                            <div class="font-bold text-xs text-slate-100 truncate">${item.name}</div>
                             <div class="text-[10px] text-slate-400 font-mono">Folder</div>
                         </div>
                         <i class="fa-solid fa-chevron-right text-slate-600 text-xs"></i>
                     `;
 
-                    // Single-click folder navigation
+                    // 1-Click Open
                     itemEl.onclick = (e) => {
                         e.stopPropagation();
-                        openFolder(file.name);
+                        openFolder(item.name);
                     };
 
                     itemEl.ondragover = (e) => {
@@ -531,65 +575,83 @@
                         itemEl.classList.add('drag-over-folder');
                     };
                     itemEl.ondragleave = () => itemEl.classList.remove('drag-over-folder');
-                    itemEl.ondrop = (e) => handleFolderDrop(e, file.name);
+                    itemEl.ondrop = (e) => handleFolderDrop(e, `${currentFullPath}/${item.name}`);
 
                 } else {
-                    // FILE CARD WITH STATUS CHECKMARK / CROSS
-                    const iconClass = (TARGET_FOLDERS[file.target]?.icon) || 'fa-file text-slate-400';
+                    // FILE CARD WITH STATUS BADGES
+                    const isSorted = isFileCorrectlySorted(item);
+                    const inSafeStaging = item.currentPath === SAFE_STAGING_PATH;
+                    const isTicking = !isSorted && !inSafeStaging && item.isHazard && !item.isCorrupted;
+
+                    const iconClass = (TARGET_FOLDERS[item.targetKey]?.icon) || 'fa-file text-slate-400';
 
                     if (state.viewMode === 'grid') {
                         itemEl.className = `p-3 rounded-xl border flex flex-col items-center justify-between cursor-pointer transition select-none relative shadow-md ${
-                            file.isCorrupted ? 'corrupted-item' : (
-                                isSelected 
-                                    ? 'bg-blue-600/25 border-blue-500 text-blue-200 ring-2 ring-blue-500/40' 
-                                    : 'bg-slate-950/90 border-slate-800 hover:border-slate-700 hover:bg-slate-900'
+                            item.isCorrupted ? 'corrupted-item' : (
+                                isTicking ? 'border-rose-500/80 bg-rose-950/20 hazard-active' : (
+                                    inSafeStaging ? 'border-amber-500/50 bg-amber-950/10' : (
+                                        isSelected 
+                                            ? 'bg-blue-600/25 border-blue-500 text-blue-200 ring-2 ring-blue-500/40' 
+                                            : 'bg-slate-950/90 border-slate-800 hover:border-slate-700 hover:bg-slate-900'
+                                    )
+                                )
                             )
                         }`;
 
+                        // Status Badge HTML
+                        let badgeHtml = '';
+                        if (isSorted) {
+                            badgeHtml = `<span class="text-emerald-400 bg-emerald-950 border border-emerald-500/50 px-1.5 py-0.5 rounded-full font-bold text-[10px]" title="Correctly Sorted!"><i class="fa-solid fa-check"></i> Done</span>`;
+                        } else if (inSafeStaging) {
+                            badgeHtml = `<span class="text-amber-300 bg-amber-950 border border-amber-500/50 px-1.5 py-0.5 rounded-full font-bold text-[10px]" title="Safe Staging: Timer Frozen! Move to target folder."><i class="fa-solid fa-shield"></i> Staged</span>`;
+                        } else if (isTicking) {
+                            badgeHtml = `<span class="text-rose-300 bg-rose-950 border border-rose-500/60 px-1.5 py-0.5 rounded-full font-mono text-[10px] animate-pulse" title="Risk Active: Ticking toward corruption!"><i class="fa-solid fa-clock"></i> ${item.graceTimer}s</span>`;
+                        } else if (item.isCorrupted) {
+                            badgeHtml = `<span class="text-red-400 bg-red-950 border border-red-500 px-1.5 py-0.5 rounded-full font-bold text-[10px]"><i class="fa-solid fa-virus"></i> Corrupted</span>`;
+                        } else {
+                            badgeHtml = `<span class="text-rose-400 bg-rose-950 border border-rose-500/40 px-1.5 py-0.5 rounded-full font-bold text-[10px]" title="Belongs in: ${item.targetPath}"><i class="fa-solid fa-xmark"></i></span>`;
+                        }
+
                         itemEl.innerHTML = `
-                            <!-- Status Indicator Badge (Checkmark or Cross) -->
-                            <div class="absolute top-2 right-2 text-sm font-extrabold" title="${isCorrect ? 'Correctly Sorted!' : 'Belongs in ' + file.target}">
-                                ${isCorrect 
-                                    ? '<span class="text-emerald-400 bg-emerald-950 border border-emerald-500/40 px-1.5 py-0.5 rounded-full shadow"><i class="fa-solid fa-check"></i></span>' 
-                                    : '<span class="text-rose-400 bg-rose-950 border border-rose-500/40 px-1.5 py-0.5 rounded-full shadow"><i class="fa-solid fa-xmark"></i></span>'
-                                }
-                            </div>
-
+                            <div class="absolute top-2 right-2 flex items-center gap-1">${badgeHtml}</div>
                             <div class="text-3xl my-2"><i class="fa-solid ${iconClass}"></i></div>
-
                             <div class="w-full text-center">
-                                <div class="text-xs font-bold truncate text-slate-200">${file.name}.${file.ext}</div>
-                                <div class="text-[10px] font-mono text-slate-400 mt-0.5">${file.size} MB</div>
+                                <div class="text-xs font-bold truncate text-slate-200">${item.name}.${item.ext}</div>
+                                <div class="text-[10px] font-mono text-slate-400 mt-0.5">${item.size} MB</div>
                             </div>
                         `;
                     } else {
                         // LIST VIEW
                         itemEl.className = `px-3.5 py-2 rounded-lg border flex items-center justify-between cursor-pointer transition text-xs ${
-                            file.isCorrupted ? 'corrupted-item' : (
-                                isSelected ? 'bg-blue-600/30 border-blue-500 text-blue-200' : 'bg-slate-950/90 border-slate-800 hover:border-slate-700'
+                            item.isCorrupted ? 'corrupted-item' : (
+                                isTicking ? 'border-rose-500/80 bg-rose-950/20' : (
+                                    isSelected ? 'bg-blue-600/30 border-blue-500 text-blue-200' : 'bg-slate-950/90 border-slate-800 hover:border-slate-700'
+                                )
                             )
                         }`;
 
                         itemEl.innerHTML = `
                             <div class="flex items-center gap-3 flex-1 truncate">
                                 <i class="fa-solid ${iconClass} text-lg"></i>
-                                <span class="font-bold text-slate-200 truncate">${file.name}.${file.ext}</span>
+                                <span class="font-bold text-slate-200 truncate">${item.name}.${item.ext}</span>
                             </div>
-                            <div class="w-24 font-mono text-slate-400">${file.size} MB</div>
-                            <div class="w-28 text-right">
-                                ${isCorrect 
-                                    ? '<span class="text-emerald-400 font-bold flex items-center gap-1 justify-end"><i class="fa-solid fa-circle-check"></i> Correct</span>' 
-                                    : `<span class="text-rose-400 font-bold flex items-center gap-1 justify-end" title="Move to /${file.target}"><i class="fa-solid fa-circle-xmark"></i> Target: /${file.target}</span>`
+                            <div class="w-24 font-mono text-slate-400">${item.size} MB</div>
+                            <div class="w-48 text-right font-mono text-[11px]">
+                                ${isSorted 
+                                    ? '<span class="text-emerald-400 font-bold"><i class="fa-solid fa-check"></i> Correct</span>' 
+                                    : (inSafeStaging 
+                                        ? '<span class="text-amber-300 font-bold"><i class="fa-solid fa-shield"></i> Staged (Safe)</span>' 
+                                        : `<span class="text-rose-400 font-bold">Target: ${item.targetKey}</span>`
+                                    )
                                 }
                             </div>
                         `;
                     }
 
-                    itemEl.onclick = (e) => handleFileClick(e, file);
-                    itemEl.oncontextmenu = (e) => handleContextMenu(e, file);
-
+                    itemEl.onclick = (e) => handleFileClick(e, item);
+                    itemEl.oncontextmenu = (e) => handleContextMenu(e, item);
                     itemEl.draggable = true;
-                    itemEl.ondragstart = (e) => handleDragStart(e, file);
+                    itemEl.ondragstart = (e) => handleDragStart(e, item);
                 }
 
                 container.appendChild(itemEl);
@@ -623,13 +685,13 @@
         }
 
         function renderSidebarTrees() {
-            // System Drives
+            // Drives
             const driveList = document.getElementById('drive-selector-list');
             driveList.innerHTML = '';
             ['Drive C:', 'Drive D:', 'Drive E:'].forEach(drv => {
                 const isCurrent = state.currentPath[0] === drv;
                 const div = document.createElement('div');
-                div.className = `p-2 rounded-xl flex items-center gap-2 cursor-pointer transition text-xs ${isCurrent ? 'bg-blue-600 text-white font-bold shadow' : 'hover:bg-slate-900 text-slate-400'}`;
+                div.className = `p-2 rounded-xl flex items-center gap-2 cursor-pointer transition ${isCurrent ? 'bg-blue-600 text-white font-bold shadow' : 'hover:bg-slate-900 text-slate-400'}`;
                 div.innerHTML = `<i class="fa-solid fa-hard-drive ${isCurrent ? 'text-amber-400' : ''}"></i> <span>${drv}</span>`;
                 div.onclick = () => {
                     state.currentPath = [drv];
@@ -638,29 +700,45 @@
                 driveList.appendChild(div);
             });
 
-            // Always-Expanded Target Folders Tree
+            // Target Folder Tree
             const tree = document.getElementById('target-folder-tree');
             tree.innerHTML = '';
-            Object.keys(TARGET_FOLDERS).forEach(targetName => {
-                const info = TARGET_FOLDERS[targetName];
+
+            // Render Safe Staging First
+            const safeStagingDiv = document.createElement('div');
+            safeStagingDiv.className = "p-2 rounded-xl border border-amber-500/40 bg-amber-950/20 hover:bg-amber-900/40 flex items-center justify-between cursor-pointer transition text-amber-300 font-bold mb-2";
+            safeStagingDiv.innerHTML = `
+                <span class="flex items-center gap-2"><i class="fa-solid fa-shield-halved text-amber-400"></i> Safe_Staging</span>
+                <span class="text-[9px] bg-amber-500/20 px-1.5 py-0.5 rounded">SAFE ZONE</span>
+            `;
+            safeStagingDiv.onclick = () => {
+                state.currentPath = ['Drive C:', 'Downloads', 'Safe_Staging'];
+                renderExplorer();
+            };
+            safeStagingDiv.ondragover = (e) => { e.preventDefault(); safeStagingDiv.classList.add('drag-over-folder'); };
+            safeStagingDiv.ondragleave = () => safeStagingDiv.classList.remove('drag-over-folder');
+            safeStagingDiv.ondrop = (e) => handleFolderDrop(e, SAFE_STAGING_PATH);
+            tree.appendChild(safeStagingDiv);
+
+            Object.keys(TARGET_FOLDERS).forEach(key => {
+                const info = TARGET_FOLDERS[key];
                 const div = document.createElement('div');
                 div.className = "p-2 rounded-xl border border-slate-800 bg-slate-900/60 hover:bg-slate-800 hover:border-blue-500/50 flex items-center justify-between cursor-pointer transition text-slate-300";
                 div.innerHTML = `
-                    <span class="flex items-center gap-2 font-semibold">
-                        <i class="fa-solid fa-folder text-amber-400 text-sm"></i> /${targetName}
+                    <span class="flex items-center gap-2">
+                        <i class="fa-solid fa-folder text-amber-400"></i> /${key}
                     </span>
-                    <span class="text-[9px] text-slate-500 font-mono">${info.drive}</span>
+                    <span class="text-[9px] text-slate-500">${info.drive}</span>
                 `;
 
-                div.onclick = () => openFolder(targetName);
-
-                // Allow Sidebar Drag & Drop target
-                div.ondragover = (e) => {
-                    e.preventDefault();
-                    div.classList.add('drag-over-folder');
+                div.onclick = () => {
+                    state.currentPath = info.targetPath.split('/');
+                    renderExplorer();
                 };
+
+                div.ondragover = (e) => { e.preventDefault(); div.classList.add('drag-over-folder'); };
                 div.ondragleave = () => div.classList.remove('drag-over-folder');
-                div.ondrop = (e) => handleFolderDrop(e, targetName);
+                div.ondrop = (e) => handleFolderDrop(e, info.targetPath);
 
                 tree.appendChild(div);
             });
@@ -668,7 +746,7 @@
 
         function updateGlobalProgress() {
             const nonFolders = state.files.filter(f => !f.isFolder);
-            const correctCount = nonFolders.filter(f => isFileCorrectlyPlaced(f)).length;
+            const correctCount = nonFolders.filter(f => isFileCorrectlySorted(f)).length;
             const total = nonFolders.length;
             const pct = total === 0 ? 100 : Math.round((correctCount / total) * 100);
 
@@ -681,7 +759,7 @@
         }
 
         /* ==========================================================================
-           6. FILE DRAG / DROP & BATCH ACTIONS
+           6. DRAG & DROP & ACTIONS
            ========================================================================== */
         function handleFileClick(e, file) {
             audio.click();
@@ -704,7 +782,7 @@
             e.dataTransfer.setData('text/plain', JSON.stringify(Array.from(state.selectedIds)));
         }
 
-        function handleFolderDrop(e, targetFolderName) {
+        function handleFolderDrop(e, destinationPath) {
             e.preventDefault();
             const raw = e.dataTransfer.getData('text/plain');
             if (!raw) return;
@@ -713,9 +791,11 @@
             let awardCredits = 0;
             state.files.forEach(f => {
                 if (movedIds.includes(f.id) && !f.isFolder) {
-                    f.parent = targetFolderName;
-                    if (f.target === targetFolderName) {
-                        awardCredits += 50; // Award 50 bytes for correct sorting!
+                    f.currentPath = destinationPath;
+
+                    // If placed in exact correct target folder -> Award Credits!
+                    if (isFileCorrectlySorted(f)) {
+                        awardCredits += 60;
                     }
                 }
             });
@@ -748,36 +828,36 @@
 
         function selectAllMisplaced() {
             state.selectedIds.clear();
-            const currentParent = state.currentPath[state.currentPath.length - 1];
-            state.files.filter(f => f.parent === currentParent && !f.isFolder && !isFileCorrectlyPlaced(f))
+            const currentFullPath = getFullPathString(state.currentPath);
+            state.files.filter(f => f.currentPath === currentFullPath && !f.isFolder && !isFileCorrectlySorted(f))
                        .forEach(f => state.selectedIds.add(f.id));
             renderExplorer();
         }
 
         function autoSortSafeFiles() {
             let sortedCount = 0;
-            const currentParent = state.currentPath[state.currentPath.length - 1];
+            const currentFullPath = getFullPathString(state.currentPath);
             state.files.forEach(f => {
-                if (f.parent === currentParent && !f.isFolder && !f.isHazard && !f.isCorrupted) {
-                    f.parent = f.target;
+                if (f.currentPath === currentFullPath && !f.isFolder && !f.isHazard && !f.isCorrupted) {
+                    f.currentPath = f.targetPath;
                     sortedCount++;
                 }
             });
             audio.correct();
-            showPopupAlert(`✨ Auto-Sorted ${sortedCount} safe files into target folders!`);
+            showPopupAlert(`✨ Auto-Sorted ${sortedCount} safe files to proper folders!`);
             renderExplorer();
         }
 
         /* ==========================================================================
-           7. VIP BOUNTIES & SHOP UPGRADES
+           7. VIP BOUNTIES & SHOP
            ========================================================================== */
         function triggerVIPBounty() {
             state.bounty = {
-                desc: 'Move 4 misplaced Python (.py) scripts to /Code',
-                target: 'Code',
+                desc: 'Move 3 misplaced .py scripts into /Code/Python_Scripts',
+                targetPath: 'Drive D:/Code/Python_Scripts',
                 ext: 'py',
                 time: 35,
-                reward: 350
+                reward: 400
             };
 
             const card = document.getElementById('urgent-bounty-card');
@@ -800,11 +880,11 @@
 
         function checkBountyCompletion() {
             if (!state.bounty) return;
-            const correctPyCount = state.files.filter(f => f.ext === state.bounty.ext && f.parent === state.bounty.target).length;
-            if (correctPyCount >= 4) {
+            const sortedPyCount = state.files.filter(f => f.ext === state.bounty.ext && f.currentPath === state.bounty.targetPath).length;
+            if (sortedPyCount >= 3) {
                 state.credits += state.bounty.reward;
                 audio.correct();
-                showPopupAlert(`🏆 VIP BOUNTY COMPLETED! +${state.bounty.reward} Bytes Bonus!`);
+                showPopupAlert(`🏆 VIP BOUNTY COMPLETED! +${state.bounty.reward} Bytes Reward!`);
                 document.getElementById('urgent-bounty-card').classList.add('hidden');
                 state.bounty = null;
             }
@@ -817,21 +897,19 @@
                 <div class="p-3 bg-slate-950 rounded-xl border border-slate-800 flex justify-between items-center">
                     <div>
                         <div class="font-bold text-slate-200">Execution Shield v1.0</div>
-                        <div class="text-[11px] text-slate-400">Completely prevents misplaced .exe and .py files from corrupting.</div>
+                        <div class="text-[11px] text-slate-400">Completely protects all misplaced .exe and .py files from corrupting.</div>
                     </div>
-                    <button class="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold rounded-xl" onclick="buyShield()">400 B</button>
+                    <button class="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold rounded-xl" onclick="buyShield()">450 B</button>
                 </div>
             `;
         }
 
         function buyShield() {
-            if (state.credits >= 400 && !state.executionShield) {
-                state.credits -= 400;
+            if (state.credits >= 450 && !state.executionShield) {
+                state.credits -= 450;
                 state.executionShield = true;
-                document.getElementById('shield-status-text').innerText = 'Execution Shield: ACTIVE';
-                document.getElementById('shield-status-text').className = 'text-emerald-400 font-bold';
                 audio.correct();
-                showPopupAlert('🛡️ Execution Shield Activated! Executables are now safe from corruption.');
+                showPopupAlert('🛡️ Execution Shield Activated! All executable hazard risks neutralized.');
                 renderShopModal();
                 updateGlobalProgress();
             }
@@ -847,13 +925,13 @@
         }
 
         /* ==========================================================================
-           8. INITIALIZATION & EVENT LISTENERS
+           8. INIT & EVENT LISTENERS
            ========================================================================== */
         window.addEventListener('DOMContentLoaded', () => {
             initFileSystem();
             renderExplorer();
 
-            // Navigation Buttons
+            // Navigation
             document.getElementById('nav-up').onclick = () => {
                 if (state.currentPath.length > 1) {
                     state.currentPath.pop();
@@ -868,7 +946,7 @@
                 renderExplorer();
             };
 
-            // View Toggle
+            // View Toggles
             document.getElementById('view-grid-btn').onclick = () => {
                 state.viewMode = 'grid';
                 document.getElementById('view-grid-btn').className = "p-1.5 px-3 bg-blue-600 text-white font-semibold";
@@ -905,14 +983,13 @@
                 if (e.target.tagName === 'INPUT') return;
                 if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a') {
                     e.preventDefault();
-                    const currentParent = state.currentPath[state.currentPath.length - 1];
-                    state.files.filter(f => f.parent === currentParent).forEach(f => state.selectedIds.add(f.id));
+                    const currentFullPath = getFullPathString(state.currentPath);
+                    state.files.filter(f => f.currentPath === currentFullPath).forEach(f => state.selectedIds.add(f.id));
                     renderExplorer();
                 } else if (e.key === 'Delete') {
-                    // Send selected files to Trash
                     state.files.forEach(f => {
                         if (state.selectedIds.has(f.id) && !f.isFolder) {
-                            f.parent = 'Trash';
+                            f.currentPath = 'Recycle Bin';
                         }
                     });
                     state.selectedIds.clear();
