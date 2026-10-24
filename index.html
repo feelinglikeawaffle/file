@@ -1,1189 +1,1238 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Digital Declutterer 999 - Massive File Explorer Sorting Simulator</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        osDark: '#0b0f19',
-                        osSurface: '#111827',
-                        osBorder: '#1f2937',
-                        osAccent: '#3b82f6',
-                        osSuccess: '#10b981',
-                        osDanger: '#ef4444',
-                        osWarning: '#f59e0b'
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                        mono: ['Fira Code', 'monospace']
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.2); }
-        ::-webkit-scrollbar-thumb { background: rgba(156, 163, 175, 0.3); border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: rgba(156, 163, 175, 0.6); }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Digital Declutterer 999 - Advanced File System Manager</title>
+  <style>
+    :root {
+      --bg-dark: #0f111a;
+      --panel-bg: #1a1d2d;
+      --panel-border: #2a2e45;
+      --accent-blue: #3b82f6;
+      --accent-green: #10b981;
+      --accent-red: #ef4444;
+      --accent-amber: #f59e0b;
+      --accent-purple: #8b5cf6;
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      --hover-bg: #252a3f;
+      --selected-bg: #323852;
+      --font-mono: 'Consolas', 'Courier New', monospace;
+    }
 
-        #selection-box {
-            position: absolute;
-            border: 1px dashed #3b82f6;
-            background-color: rgba(59, 130, 246, 0.18);
-            pointer-events: none;
-            z-index: 40;
-            display: none;
-        }
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      user-select: none;
+    }
 
-        @keyframes hazard-pulse {
-            0%, 100% { border-color: rgba(239, 68, 68, 0.9); box-shadow: 0 0 12px rgba(239, 68, 68, 0.5); }
-            50% { border-color: rgba(245, 158, 11, 0.9); box-shadow: 0 0 18px rgba(245, 158, 11, 0.7); }
-        }
-        .hazard-active { animation: hazard-pulse 1s infinite alternate; }
+    /* Header */
+    header {
+      background-color: var(--panel-bg);
+      border-bottom: 1px solid var(--panel-border);
+      padding: 8px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
 
-        @keyframes glitch-shake {
-            0% { transform: translate(0, 0); }
-            20% { transform: translate(-2px, 2px); }
-            40% { transform: translate(2px, -1px); }
-            60% { transform: translate(-1px, -2px); }
-            80% { transform: translate(2px, 1px); }
-            100% { transform: translate(0, 0); }
-        }
-        .corrupted-item {
-            animation: glitch-shake 0.3s infinite;
-            border-color: #ef4444 !important;
-            background-color: rgba(239, 68, 68, 0.18) !important;
-        }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: bold;
+      font-size: 1.1rem;
+    }
 
-        .no-select { user-select: none; -webkit-user-select: none; }
-        .drag-over-folder {
-            outline: 2px dashed #3b82f6 !important;
-            background-color: rgba(59, 130, 246, 0.25) !important;
-        }
-    </style>
+    .stats-bar {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      background: rgba(0, 0, 0, 0.3);
+      padding: 6px 14px;
+      border-radius: 6px;
+      border: 1px solid var(--panel-border);
+      font-size: 0.85rem;
+    }
+
+    .stat-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .save-indicator {
+      font-size: 0.8rem;
+      color: var(--accent-green);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .save-indicator.active {
+      opacity: 1;
+    }
+
+    button {
+      background: var(--panel-border);
+      color: var(--text-main);
+      border: 1px solid transparent;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+    }
+
+    button:hover {
+      background: var(--hover-bg);
+      border-color: var(--accent-blue);
+    }
+
+    button.primary { background: var(--accent-blue); }
+    button.primary:hover { background: #2563eb; }
+    button.purple { background: var(--accent-purple); }
+    button.purple:hover { background: #7c3aed; }
+    button.danger { background: var(--accent-red); }
+    button.danger:hover { background: #dc2626; }
+
+    /* Main Layout */
+    .app-body {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* Sidebar */
+    aside {
+      width: 300px;
+      background-color: var(--panel-bg);
+      border-right: 1px solid var(--panel-border);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+
+    .sidebar-section {
+      padding: 12px;
+      border-bottom: 1px solid var(--panel-border);
+    }
+
+    .sidebar-title {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .folder-tree {
+      list-style: none;
+      padding-left: 0;
+      margin: 0;
+    }
+
+    .folder-item {
+      padding: 6px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85rem;
+      margin-bottom: 2px;
+      transition: background 0.15s;
+    }
+
+    .folder-item:hover { background-color: var(--hover-bg); }
+    .folder-item.active { background-color: var(--selected-bg); color: #fff; font-weight: 500; }
+    .folder-item.drag-over {
+      outline: 2px dashed var(--accent-blue);
+      background-color: rgba(59, 130, 246, 0.2);
+    }
+
+    .folder-count {
+      margin-left: auto;
+      font-size: 0.75rem;
+      background: rgba(0, 0, 0, 0.4);
+      padding: 2px 6px;
+      border-radius: 10px;
+      color: var(--text-muted);
+    }
+
+    .folder-tag {
+      font-size: 0.65rem;
+      padding: 1px 4px;
+      border-radius: 3px;
+      font-weight: bold;
+    }
+    .tag-safe { background: rgba(16, 185, 129, 0.2); color: var(--accent-green); }
+    .tag-vault { background: rgba(139, 92, 246, 0.2); color: var(--accent-purple); }
+
+    /* Main Explorer */
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background-color: var(--bg-dark);
+      overflow: hidden;
+    }
+
+    .toolbar {
+      padding: 8px 16px;
+      background: var(--panel-bg);
+      border-bottom: 1px solid var(--panel-border);
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .breadcrumb {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--bg-dark);
+      padding: 4px 10px;
+      border-radius: 4px;
+      border: 1px solid var(--panel-border);
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      flex: 1;
+    }
+
+    .search-box {
+      background: var(--bg-dark);
+      border: 1px solid var(--panel-border);
+      border-radius: 4px;
+      padding: 4px 8px;
+      color: var(--text-main);
+      font-size: 0.85rem;
+      width: 180px;
+    }
+
+    .filter-select {
+      background: var(--bg-dark);
+      border: 1px solid var(--panel-border);
+      border-radius: 4px;
+      padding: 4px 8px;
+      color: var(--text-main);
+      font-size: 0.85rem;
+    }
+
+    .file-container {
+      flex: 1;
+      padding: 16px;
+      overflow-y: auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+      grid-auto-rows: max-content;
+      gap: 12px;
+      position: relative;
+    }
+
+    /* File Cards */
+    .file-card {
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: 6px;
+      padding: 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: grab;
+      position: relative;
+      transition: transform 0.1s, border-color 0.15s;
+    }
+
+    .file-card:hover {
+      border-color: var(--accent-blue);
+      transform: translateY(-2px);
+    }
+
+    .file-card.selected {
+      background: var(--selected-bg);
+      border-color: var(--accent-blue);
+    }
+
+    .file-card.corrupted {
+      border-color: var(--accent-red);
+      animation: pulse-red 1.2s infinite alternate;
+    }
+
+    .file-card.starred {
+      border-color: var(--accent-amber);
+    }
+
+    @keyframes pulse-red {
+      0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+      100% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+    }
+
+    .file-icon { font-size: 1.5rem; line-height: 1; }
+    .file-info { flex: 1; min-width: 0; }
+    .file-name {
+      font-size: 0.85rem;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .file-meta {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-top: 4px;
+    }
+
+    .status-badge { font-size: 0.85rem; font-weight: bold; }
+    .status-correct { color: var(--accent-green); }
+    .status-wrong { color: var(--accent-red); }
+
+    .grace-badge {
+      font-size: 0.7rem;
+      background: rgba(245, 158, 11, 0.2);
+      color: var(--accent-amber);
+      border: 1px solid var(--accent-amber);
+      padding: 1px 4px;
+      border-radius: 3px;
+    }
+
+    .staged-badge {
+      font-size: 0.7rem;
+      background: rgba(59, 130, 246, 0.2);
+      color: var(--accent-blue);
+      border: 1px solid var(--accent-blue);
+      padding: 1px 4px;
+      border-radius: 3px;
+    }
+
+    .star-btn {
+      cursor: pointer;
+      font-size: 0.8rem;
+      opacity: 0.4;
+      transition: opacity 0.2s;
+    }
+    .star-btn.active { opacity: 1; }
+
+    /* Bounties / Active Quests Side Widget */
+    .bounty-panel {
+      background: rgba(0,0,0,0.2);
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid var(--panel-border);
+      margin-bottom: 12px;
+    }
+
+    .bounty-title {
+      font-size: 0.8rem;
+      font-weight: bold;
+      color: var(--accent-amber);
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .bounty-item {
+      font-size: 0.75rem;
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 4px;
+      padding-bottom: 4px;
+      border-bottom: 1px dashed rgba(255,255,255,0.08);
+    }
+
+    /* Footer */
+    footer {
+      background: var(--panel-bg);
+      border-top: 1px solid var(--panel-border);
+      padding: 8px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.85rem;
+    }
+
+    .pagination { display: flex; gap: 8px; align-items: center; }
+
+    .progress-container {
+      width: 180px;
+      height: 8px;
+      background: rgba(0, 0, 0, 0.4);
+      border-radius: 4px;
+      overflow: hidden;
+      border: 1px solid var(--panel-border);
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent-blue), var(--accent-green));
+      width: 0%;
+      transition: width 0.3s;
+    }
+
+    /* Modal Styling */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+
+    .modal-overlay.active { opacity: 1; pointer-events: auto; }
+
+    .modal {
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: 8px;
+      width: 550px;
+      max-width: 90%;
+      max-height: 85vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    }
+
+    .modal-header {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--panel-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: bold;
+    }
+
+    .modal-body {
+      padding: 16px;
+      overflow-y: auto;
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+
+    .modal-footer {
+      padding: 12px 16px;
+      border-top: 1px solid var(--panel-border);
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .shop-item {
+      background: rgba(0,0,0,0.2);
+      border: 1px solid var(--panel-border);
+      border-radius: 6px;
+      padding: 10px;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .puzzle-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .puzzle-hint-item {
+      background: rgba(0,0,0,0.2);
+      padding: 8px;
+      border-radius: 4px;
+      border: 1px solid var(--panel-border);
+    }
+
+    .puzzle-ext {
+      font-family: var(--font-mono);
+      color: var(--accent-blue);
+      font-weight: bold;
+    }
+
+    .batch-bar {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      background: rgba(59, 130, 246, 0.1);
+      border: 1px solid var(--accent-blue);
+      padding: 6px 12px;
+      border-radius: 4px;
+      margin-bottom: 8px;
+    }
+  </style>
 </head>
-<body id="app-body" class="dark bg-osDark text-slate-100 font-sans h-screen overflow-hidden no-select antialiased flex flex-col select-none">
+<body>
 
-    <!-- TOP HEADER UTILITY BAR -->
-    <header class="h-12 bg-slate-900 border-b border-slate-800 flex items-center justify-between px-4 text-xs z-30 shadow-lg">
-        <div class="flex items-center space-x-3">
-            <span class="font-extrabold flex items-center gap-2 text-blue-400 text-sm tracking-wide">
-                <i class="fa-solid fa-folder-tree text-amber-400 text-base"></i> DIGITAL DECLUTTERER 999
-                <span class="text-[10px] bg-blue-500/20 text-blue-300 border border-blue-500/30 px-2 py-0.5 rounded font-mono font-bold">999 FILES EDITION</span>
-            </span>
-            
-            <div class="h-4 w-px bg-slate-800"></div>
-
-            <button id="btn-shop" class="hover:bg-slate-800 px-3 py-1.5 rounded-lg flex items-center gap-2 text-amber-400 font-semibold transition border border-amber-500/20">
-                <i class="fa-solid fa-shop"></i> Tech Shop
-            </button>
-            <button id="btn-puzzle-helper" class="hover:bg-slate-800 px-3 py-1.5 rounded-lg flex items-center gap-2 text-purple-400 font-semibold transition border border-purple-500/20">
-                <i class="fa-solid fa-brain"></i> Puzzle Index
-            </button>
-            <button id="btn-select-wrong" class="hover:bg-slate-800 px-3 py-1.5 rounded-lg flex items-center gap-2 text-rose-400 font-semibold transition border border-rose-500/20">
-                <i class="fa-solid fa-object-group"></i> Select Misplaced
-            </button>
-            <button id="btn-auto-sort" class="hover:bg-blue-600/20 px-3 py-1.5 rounded-lg flex items-center gap-2 text-blue-400 font-semibold transition border border-blue-500/20">
-                <i class="fa-solid fa-wand-magic-sparkles"></i> Auto-Sort Easy
-            </button>
-        </div>
-
-        <div class="flex items-center space-x-4">
-            <!-- Global Sorting Progress Tracker -->
-            <div class="flex items-center gap-3 bg-slate-950 border border-slate-800 px-3.5 py-1.5 rounded-xl shadow-inner">
-                <span class="text-slate-400 font-medium">Sorted:</span>
-                <div class="w-36 bg-slate-900 h-2.5 rounded-full overflow-hidden border border-slate-800 flex">
-                    <div id="global-progress-bar" class="bg-emerald-500 h-full transition-all duration-300" style="width: 0%;"></div>
-                </div>
-                <span id="global-progress-text" class="font-mono font-bold text-emerald-400">0 / 999 (0%)</span>
-            </div>
-
-            <!-- Player Bytes Credits -->
-            <div class="flex items-center gap-2 bg-slate-950 border border-amber-500/30 px-3 py-1.5 rounded-xl text-amber-400 font-mono font-bold shadow-inner">
-                <i class="fa-solid fa-coins"></i>
-                <span id="player-credits">500</span> <span class="text-[10px] text-slate-500">BYTES</span>
-            </div>
-
-            <!-- Sound Toggle -->
-            <button id="btn-audio-toggle" class="p-2 hover:bg-slate-800 rounded-lg text-slate-300 transition" title="Toggle SFX">
-                <i id="audio-icon" class="fa-solid fa-volume-high"></i>
-            </button>
-        </div>
-    </header>
-
-    <!-- EXPLORER NAVIGATION TOOLBAR -->
-    <div class="p-2.5 bg-slate-950 border-b border-slate-800 flex items-center justify-between gap-3 text-xs select-none">
-        <div class="flex items-center gap-1.5">
-            <button id="nav-up" class="px-2.5 py-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-lg text-slate-300 font-semibold flex items-center gap-1.5 transition" title="Go to Parent Folder">
-                <i class="fa-solid fa-arrow-up text-blue-400"></i> Up
-            </button>
-            <button id="nav-refresh" class="p-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-lg text-slate-400 hover:text-white transition" title="Refresh Directory">
-                <i class="fa-solid fa-rotate-right"></i>
-            </button>
-        </div>
-
-        <!-- Sticky Breadcrumb Trail -->
-        <div id="breadcrumb-bar" class="flex-1 bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5 flex items-center gap-2 font-mono text-slate-300 overflow-x-auto">
-            <!-- Dynamic breadcrumb links -->
-        </div>
-
-        <!-- Global Search Bar -->
-        <div class="relative w-72">
-            <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-500"></i>
-            <input type="text" id="search-input" placeholder="Search all 999 files by name, ext, puzzle..." class="w-full bg-slate-900 border border-slate-800 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-blue-500 font-mono">
-        </div>
-
-        <!-- View Toggle Buttons -->
-        <div class="flex border border-slate-800 rounded-lg overflow-hidden bg-slate-900">
-            <button id="view-grid-btn" class="p-1.5 px-3 bg-blue-600 text-white font-semibold"><i class="fa-solid fa-border-all"></i> Grid</button>
-            <button id="view-list-btn" class="p-1.5 px-3 text-slate-400 hover:text-slate-200 font-semibold"><i class="fa-solid fa-list"></i> List</button>
-        </div>
+  <!-- Header -->
+  <header>
+    <div class="brand">
+      <span>📁</span> Digital Declutterer 999
     </div>
 
-    <!-- QUICK FILTER CHIPS BAR -->
-    <div class="px-4 py-1.5 bg-slate-900/60 border-b border-slate-800 flex items-center justify-between text-xs font-mono">
-        <div class="flex items-center space-x-2 overflow-x-auto py-0.5" id="filter-chips-container">
-            <span class="text-slate-500 font-bold uppercase text-[10px] mr-1">Filter View:</span>
-            <button class="filter-chip px-2.5 py-1 rounded-md bg-blue-600 text-white font-bold" data-filter="all">Show All</button>
-            <button class="filter-chip px-2.5 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300" data-filter="misplaced">Misplaced Only ✗</button>
-            <button class="filter-chip px-2.5 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-amber-400" data-filter="hazards">Exe/Py Hazards ⚠️</button>
-            <button class="filter-chip px-2.5 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-purple-400" data-filter="puzzle">Puzzle Files 🧩</button>
+    <div class="stats-bar">
+      <div class="stat-item">
+        <span>Progress:</span>
+        <div class="progress-container">
+          <div class="progress-fill" id="progressFill"></div>
         </div>
+        <span id="progressText">0 / 999</span>
+      </div>
 
-        <!-- PAGINATION CONTROLS -->
-        <div class="flex items-center space-x-2 text-slate-300">
-            <button id="pg-prev" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 rounded text-slate-200 font-bold">&lt; Prev</button>
-            <span id="pg-info" class="font-bold text-blue-400">Page 1 / 1</span>
-            <button id="pg-next" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 rounded text-slate-200 font-bold">Next &gt;</button>
-        </div>
+      <div class="stat-item">
+        <span>Bytes:</span>
+        <strong id="byteCount" style="color: var(--accent-amber);">0 B</strong>
+      </div>
+
+      <div class="save-indicator" id="saveIndicator">
+        <span>💾 Saved</span>
+      </div>
     </div>
 
-    <!-- MAIN OS WORKSPACE -->
-    <div class="flex-1 flex overflow-hidden relative">
-
-        <!-- SIDEBAR DIRECTORY TREE -->
-        <aside class="w-80 border-r border-slate-800 bg-slate-950/90 flex flex-col p-3 select-none overflow-y-auto space-y-4">
-            <div>
-                <div class="text-[10px] font-extrabold tracking-wider text-slate-500 uppercase px-2 mb-2 flex justify-between items-center">
-                    <span>System Drives</span>
-                    <i class="fa-solid fa-server text-slate-600"></i>
-                </div>
-                <div id="drive-selector-list" class="space-y-1 font-mono text-xs">
-                    <!-- Dynamic Drive Items -->
-                </div>
-            </div>
-
-            <div>
-                <div class="text-[10px] font-extrabold tracking-wider text-slate-500 uppercase px-2 mb-2 flex justify-between items-center">
-                    <span>Target Folder Tree (Drag Target)</span>
-                    <i class="fa-solid fa-folder-tree text-slate-600"></i>
-                </div>
-                <div id="target-folder-tree" class="space-y-1 font-mono text-xs max-h-72 overflow-y-auto pr-1">
-                    <!-- Dynamic Folder Tree -->
-                </div>
-            </div>
-
-            <div>
-                <div class="text-[10px] font-extrabold tracking-wider text-slate-500 uppercase px-2 mb-2">Disposal Vaults</div>
-                <div class="space-y-1.5 text-xs font-mono">
-                    <div id="drop-trash-bin" class="p-2.5 rounded-xl border border-dashed border-red-500/40 bg-red-500/5 hover:bg-red-500/15 transition cursor-pointer flex items-center justify-between">
-                        <span class="flex items-center gap-2 text-red-400 font-semibold">
-                            <i class="fa-solid fa-trash-can text-base"></i> Recycle Bin
-                        </span>
-                        <span id="trash-count-badge" class="text-[10px] bg-red-600 text-white rounded-full px-2 py-0.5 font-bold">0</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Active Bounty Objectives -->
-            <div class="mt-auto pt-2 border-t border-slate-800">
-                <div id="urgent-bounty-card" class="hidden bg-amber-950/40 border border-amber-500/40 rounded-xl p-3 text-xs space-y-1.5 shadow-lg">
-                    <div class="font-bold text-amber-400 flex justify-between items-center">
-                        <span class="flex items-center gap-1.5"><i class="fa-solid fa-clock"></i> VIP BOUNTY</span>
-                        <span id="bounty-timer" class="font-mono text-rose-400 font-bold">45s</span>
-                    </div>
-                    <div id="bounty-description" class="text-slate-300 font-medium leading-snug">Move 5 ROM dumps to D:/Emulation/ROMs!</div>
-                    <div class="text-[10px] text-amber-300/80 font-mono font-semibold">+500 BYTES REWARD</div>
-                </div>
-            </div>
-        </aside>
-
-        <!-- MAIN FILE VIEWPORT -->
-        <main id="file-viewport" class="flex-1 p-4 overflow-y-auto relative bg-slate-900/40 focus:outline-none" tabindex="0">
-            
-            <!-- EXECUTABLE HAZARD WARNING BANNER -->
-            <div id="hazard-warning-banner" class="hidden mb-3 p-3 bg-red-950/80 border border-red-500/60 rounded-xl text-xs flex items-center justify-between text-red-200 hazard-active shadow-xl">
-                <div class="flex items-center gap-3">
-                    <i class="fa-solid fa-triangle-exclamation text-xl text-red-400 animate-bounce"></i>
-                    <div>
-                        <span class="font-bold text-red-300 uppercase tracking-wide">Misplaced Executables / Scripts Active!</span>
-                        <p class="text-red-200/80 text-[11px]">.exe and .py files moved outside <b>Safe Staging</b> into wrong directories are actively ticking toward corruption!</p>
-                    </div>
-                </div>
-                <span id="hazard-countdown-badge" class="font-mono font-extrabold text-xs bg-red-900/80 border border-red-500/50 px-3 py-1 rounded-lg text-red-200">HAZARDS TICKING</span>
-            </div>
-
-            <!-- Files Grid/List Container -->
-            <div id="file-container" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3.5 min-h-full content-start">
-                <!-- Dynamic files & folders rendered here -->
-            </div>
-
-            <!-- Lasso Drag Selection Box -->
-            <div id="selection-box"></div>
-        </main>
+    <div style="display: flex; gap: 8px;">
+      <button class="purple" id="techShopBtn">🛒 Tech Shop</button>
+      <button id="puzzleHelperBtn">❓ Folder Index</button>
+      <button class="danger" id="resetSaveBtn">🔄 Reset Save</button>
     </div>
+  </header>
 
-    <!-- FOOTER STATUS BAR -->
-    <footer class="h-8 bg-slate-950 border-t border-slate-800 px-4 flex items-center justify-between text-xs select-none z-20 font-mono">
-        <div class="flex items-center space-x-4">
-            <span id="status-selected" class="text-slate-400 font-medium">0 files selected</span>
-            <span class="text-slate-700">|</span>
-            <span id="status-folder-count" class="text-slate-400 font-medium">0 items in folder</span>
-            <span class="text-slate-700">|</span>
-            <span class="text-slate-500 text-[11px]">Hotkeys: <kbd class="bg-slate-800 px-1.5 py-0.5 rounded text-slate-300">Ctrl+A</kbd> Select All | <kbd class="bg-slate-800 px-1.5 py-0.5 rounded text-slate-300">Del</kbd> Trash</span>
+  <!-- App Body -->
+  <div class="app-body">
+    <!-- Sidebar -->
+    <aside>
+      <div class="sidebar-section">
+        <div class="bounty-panel">
+          <div class="bounty-title">🎯 Priority Bounties</div>
+          <div id="bountyList">
+            <!-- Populated via JS -->
+          </div>
         </div>
 
-        <div class="flex items-center gap-2 text-slate-400 text-[11px]">
-            <span id="shield-indicator-dot" class="w-2.5 h-2.5 rounded-full bg-slate-600 inline-block"></span>
-            <span id="shield-status-text">Execution Shield: INACTIVE</span>
+        <div class="sidebar-title">
+          <span>Drives & Folders</span>
+          <button id="toggleStarredOnlyBtn" style="font-size:0.7rem; padding: 2px 6px;">⭐ Bookmarks</button>
         </div>
-    </footer>
+        <ul class="folder-tree" id="folderTree">
+          <!-- Populated via JS -->
+        </ul>
+      </div>
+    </aside>
 
-    <!-- CONTEXT MENU (RIGHT CLICK) -->
-    <div id="context-menu" class="hidden absolute z-50 w-56 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl text-xs py-1.5 text-slate-200">
-        <button id="ctx-open" class="w-full text-left px-3.5 py-1.5 hover:bg-blue-600 hover:text-white flex items-center gap-2.5 font-medium"><i class="fa-solid fa-folder-open text-amber-400 w-4"></i> Open Folder</button>
-        <button id="ctx-move-correct" class="w-full text-left px-3.5 py-1.5 hover:bg-blue-600 hover:text-white flex items-center gap-2.5 font-medium"><i class="fa-solid fa-circle-check text-emerald-400 w-4"></i> Auto-Move to Proper Folder</button>
-        <div class="my-1 border-t border-slate-800"></div>
-        <button id="ctx-delete" class="w-full text-left px-3.5 py-1.5 hover:bg-red-600 hover:text-white text-red-400 flex items-center gap-2.5 font-medium"><i class="fa-solid fa-trash w-4"></i> Send to Recycle Bin</button>
-    </div>
+    <!-- Main Explorer -->
+    <main>
+      <!-- Toolbar -->
+      <div class="toolbar">
+        <button id="upLevelBtn">⬆️ Up</button>
+        <div class="breadcrumb" id="breadcrumbTrail">C:/</div>
+        <input type="text" class="search-box" id="searchInput" placeholder="Search filenames...">
+        
+        <select class="filter-select" id="statusFilter">
+          <option value="all">All Files</option>
+          <option value="misplaced">Misplaced Only (✗)</option>
+          <option value="correct">Sorted Only (✓)</option>
+          <option value="hazards">Hazards (.exe / .py)</option>
+          <option value="corrupted">Corrupted Files</option>
+          <option value="starred">Starred / Bookmarked</option>
+        </select>
 
-    <!-- TECH SHOP MODAL -->
-    <div id="modal-shop" class="hidden fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
-        <div class="bg-slate-900 border border-slate-800 w-full max-w-xl rounded-2xl p-6 shadow-2xl space-y-4">
-            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-                <h3 class="font-extrabold flex items-center gap-2 text-amber-400 text-lg"><i class="fa-solid fa-shop"></i> IT Administrator Tech Shop</h3>
-                <button class="close-modal text-slate-400 hover:text-white text-lg"><i class="fa-solid fa-xmark"></i></button>
-            </div>
+        <button id="selectAllBtn">Select All</button>
+        <button class="primary" id="autoSortEasyBtn">⚡ Auto-Sort Obvious</button>
+      </div>
 
-            <div class="space-y-3 text-xs" id="shop-items-container">
-                <!-- Dynamic shop items -->
-            </div>
+      <!-- Batch Action Notification Bar -->
+      <div class="toolbar" id="batchBar" style="display: none; background: var(--selected-bg);">
+        <span id="batchCountText" style="font-size: 0.85rem; font-weight: bold;">0 items selected</span>
+        <button id="batchStarBtn">⭐ Star Selected</button>
+        <button id="batchMoveModalBtn" class="primary">📦 Batch Move To...</button>
+        <button id="clearSelectionBtn">✕ Clear Selection</button>
+      </div>
 
-            <div class="flex justify-between items-center pt-3 border-t border-slate-800">
-                <div class="text-sm font-mono text-amber-400 font-bold">Balance: <span id="shop-balance-display">500</span> BYTES</div>
-                <button class="close-modal px-5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl font-semibold">Close</button>
-            </div>
+      <!-- File Grid -->
+      <div class="file-container" id="fileContainer">
+        <!-- Files rendered dynamically -->
+      </div>
+
+      <!-- Footer Pagination -->
+      <footer>
+        <div id="fileCountDisplay">Showing 0 files</div>
+        <div class="pagination">
+          <button id="prevPageBtn">Previous</button>
+          <span id="pageIndicator">Page 1 of 1</span>
+          <button id="nextPageBtn">Next</button>
         </div>
+      </footer>
+    </main>
+  </div>
+
+  <!-- Tech Shop Modal -->
+  <div class="modal-overlay" id="shopModal">
+    <div class="modal">
+      <div class="modal-header">
+        <span>🛒 System Upgrades & Automation Shop</span>
+        <button id="closeShopModal">✕</button>
+      </div>
+      <div class="modal-body" id="shopContainer">
+        <!-- Upgrades populated via JS -->
+      </div>
+      <div class="modal-footer">
+        <button class="primary" id="closeShopModalBtn">Close</button>
+      </div>
     </div>
+  </div>
 
-    <!-- PUZZLE HELPER INDEX MODAL -->
-    <div id="modal-puzzle-helper" class="hidden fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
-        <div class="bg-slate-900 border border-slate-800 w-full max-w-2xl rounded-2xl p-6 shadow-2xl space-y-4 max-h-[85vh] flex flex-col">
-            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-                <h3 class="font-extrabold flex items-center gap-2 text-purple-400 text-lg"><i class="fa-solid fa-brain"></i> Cryptic & Puzzle File Index Helper</h3>
-                <button class="close-puzzle-modal text-slate-400 hover:text-white text-lg"><i class="fa-solid fa-xmark"></i></button>
-            </div>
+  <!-- Batch Move Modal -->
+  <div class="modal-overlay" id="batchMoveModal">
+    <div class="modal">
+      <div class="modal-header">
+        <span>📦 Select Target Directory for Batch Move</span>
+        <button id="closeBatchMoveModal">✕</button>
+      </div>
+      <div class="modal-body">
+        <ul class="folder-tree" id="batchFolderTree">
+          <!-- Folder options rendered dynamically -->
+        </ul>
+      </div>
+    </div>
+  </div>
 
-            <div class="text-xs text-slate-400 leading-relaxed">
-                Stuck on where a mysterious file belongs? Consult this system administrator logic directory:
-            </div>
-
-            <div class="flex-1 overflow-y-auto space-y-2 text-xs font-mono pr-1" id="puzzle-guide-list">
-                <!-- Dynamic Puzzle Guide Entries -->
-            </div>
-
-            <div class="pt-3 border-t border-slate-800 flex justify-end">
-                <button class="close-puzzle-modal px-5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl font-semibold">Got It</button>
-            </div>
+  <!-- Folder Directory Index Modal -->
+  <div class="modal-overlay" id="puzzleModal">
+    <div class="modal">
+      <div class="modal-header">
+        <span>Folder Directory Index & Guide</span>
+        <button id="closePuzzleModal">✕</button>
+      </div>
+      <div class="modal-body">
+        <p>Use this index to figure out where specific extension types belong:</p>
+        <div class="puzzle-grid" id="puzzleIndexGrid">
+          <!-- Populated by JS -->
         </div>
+      </div>
+      <div class="modal-footer">
+        <button class="primary" id="closePuzzleModalBtn">Got it</button>
+      </div>
     </div>
+  </div>
 
-    <!-- POPUP NOTIFICATION CONTAINER -->
-    <div id="popup-container" class="fixed bottom-12 right-6 space-y-3 z-50 pointer-events-none"></div>
+  <script>
+    // --- GAME DATA STRUCTURES & DEFINITIONS ---
+    const FOLDERS = {
+      'C:/Downloads/Safe_Staging': { label: 'Safe Staging (.exe/.py)', tag: 'safe' },
+      'C:/Downloads/Unsorted_Batch_1': { label: 'Unsorted Batch 1' },
+      'C:/Downloads/Unsorted_Batch_2': { label: 'Unsorted Batch 2' },
+      'C:/Documents/Financial': { label: 'Financial Docs' },
+      'C:/Documents/Personal': { label: 'Personal Docs' },
+      'C:/Pictures/Photos': { label: 'Photos' },
+      'C:/Pictures/Graphics': { label: 'Vector & Graphics' },
+      'C:/Programs/System_Apps': { label: 'System Applications' },
+      'C:/Programs/Games': { label: 'Game Installs' },
 
-    <!-- GAME ENGINE CODE -->
-    <script>
-        /* ==========================================================================
-           1. AUDIO SYNTHESIZER ENGINE (Web Audio API)
-           ========================================================================== */
-        class AudioEngine {
-            constructor() {
-                this.ctx = null;
-                this.enabled = true;
-            }
-            init() {
-                if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-            }
-            playTone(freq, type = 'sine', duration = 0.1, vol = 0.1) {
-                if (!this.enabled) return;
-                this.init();
-                try {
-                    const osc = this.ctx.createOscillator();
-                    const gain = this.ctx.createGain();
-                    osc.type = type;
-                    osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
-                    gain.gain.setValueAtTime(vol, this.ctx.currentTime);
-                    gain.gain.exponentialRampToValueAtTime(0.00001, this.ctx.currentTime + duration);
-                    osc.connect(gain);
-                    gain.connect(this.ctx.destination);
-                    osc.start();
-                    osc.stop(this.ctx.currentTime + duration);
-                } catch(e) {}
-            }
-            click() { this.playTone(800, 'sine', 0.03, 0.04); }
-            openFolder() { this.playTone(600, 'triangle', 0.06, 0.06); }
-            drop() { this.playTone(350, 'sine', 0.08, 0.08); }
-            correct() {
-                this.playTone(523.25, 'sine', 0.08, 0.1);
-                setTimeout(() => this.playTone(659.25, 'sine', 0.12, 0.1), 80);
-            }
-            corrupt() {
-                this.playTone(180, 'sawtooth', 0.25, 0.25);
-                setTimeout(() => this.playTone(120, 'sawtooth', 0.3, 0.25), 150);
-            }
-        }
-        const audio = new AudioEngine();
+      'D:/Backups/Messy_Dump': { label: 'Messy Backup Dump' },
+      'D:/Audio/Music': { label: 'Music Tracks' },
+      'D:/Audio/SFX': { label: 'Sound Effects' },
+      'D:/Video/Movies': { label: 'Movies & Video' },
+      'D:/Code/Python_Scripts': { label: 'Python Scripts' },
+      'D:/Code/Dev_Tools': { label: 'Development Tools' },
+      'D:/Code/Legacy': { label: 'Legacy Source Code' },
+      'D:/Code/Scripts': { label: 'Shell Scripts (.sh)' },
+      'D:/Emulation/ROMs': { label: 'Retro ROM Dumps' },
+      'D:/Archives/Compressed': { label: 'Compressed Zips' },
 
-        /* ==========================================================================
-           2. TARGET DIRECTORIES & DEFINITIONS (30+ DEDICATED FOLDERS)
-           ========================================================================== */
-        const SAFE_STAGING_PATH = 'Drive C:/Downloads/Safe_Staging';
+      'E:/Unsorted_Cloud_Sync': { label: 'Cloud Sync Dump' },
+      'E:/Confidential/Logs': { label: 'System Audit Logs' },
+      'E:/Databases/SQL': { label: 'Database Dumps (.sql)' },
+      'E:/Mobile/APKs': { label: 'Android Packages' },
+      'E:/Quarantine_Vault': { label: 'Quarantine Vault', tag: 'vault' },
 
-        const TARGET_FOLDERS = {
-            // DRIVE C:
-            'Photos': { drive: 'Drive C:', targetPath: 'Drive C:/Pictures/Photos', icon: 'fa-file-image text-emerald-400' },
-            'Design': { drive: 'Drive C:', targetPath: 'Drive C:/Pictures/Design_Assets', icon: 'fa-palette text-pink-400' },
-            'Financial': { drive: 'Drive C:', targetPath: 'Drive C:/Documents/Financial', icon: 'fa-file-invoice-dollar text-green-400' },
-            'Legal': { drive: 'Drive C:', targetPath: 'Drive C:/Documents/Legal', icon: 'fa-scale-balanced text-amber-300' },
-            'Personal': { drive: 'Drive C:', targetPath: 'Drive C:/Documents/Personal', icon: 'fa-user text-blue-300' },
-            'System Apps': { drive: 'Drive C:', targetPath: 'Drive C:/Programs/System_Apps', icon: 'fa-file-zipper text-purple-400' },
-            'Games': { drive: 'Drive C:', targetPath: 'Drive C:/Programs/Games', icon: 'fa-gamepad text-indigo-400' },
-            'Utilities': { drive: 'Drive C:', targetPath: 'Drive C:/Programs/Utilities', icon: 'fa-screwdriver-wrench text-sky-400' },
+      'F:/Security/Keys': { label: 'Cryptographic PEM Keys' },
+      'F:/OS_Images/ISOs': { label: 'Operating System ISOs' },
+      'F:/Backups/Server_Snapshots': { label: 'Server Snapshots' }
+    };
 
-            // DRIVE D:
-            'Music': { drive: 'Drive D:', targetPath: 'Drive D:/Audio/Music', icon: 'fa-music text-amber-400' },
-            'Podcasts': { drive: 'Drive D:', targetPath: 'Drive D:/Audio/Podcasts', icon: 'fa-podcast text-amber-300' },
-            'Movies': { drive: 'Drive D:', targetPath: 'Drive D:/Video/Movies', icon: 'fa-film text-rose-400' },
-            'Clips': { drive: 'Drive D:', targetPath: 'Drive D:/Video/Clips', icon: 'fa-video text-rose-300' },
-            'Python Scripts': { drive: 'Drive D:', targetPath: 'Drive D:/Code/Python_Scripts', icon: 'fa-file-code text-cyan-400' },
-            'Dev Tools': { drive: 'Drive D:', targetPath: 'Drive D:/Code/Dev_Tools', icon: 'fa-code text-teal-400' },
-            'Legacy Code': { drive: 'Drive D:', targetPath: 'Drive D:/Code/Legacy', icon: 'fa-laptop-code text-indigo-300', isPuzzle: true, clue: "Spaghetti code, legacy files & old script projects" },
-            'Shell Scripts': { drive: 'Drive D:', targetPath: 'Drive D:/Code/Scripts', icon: 'fa-terminal text-emerald-300', isPuzzle: true, clue: "Kernel patches, automation bash & .sh files" },
-            'Archives': { drive: 'Drive D:', targetPath: 'Drive D:/Archives/Compressed', icon: 'fa-file-box text-orange-400' },
-            'ISOs': { drive: 'Drive D:', targetPath: 'Drive D:/Archives/Disk_Images', icon: 'fa-compact-disc text-blue-400', isPuzzle: true, clue: "Virtual disk images, OS installers & .iso files" },
-            'ROMs': { drive: 'Drive D:', targetPath: 'Drive D:/Emulation/ROMs', icon: 'fa-headset text-purple-300', isPuzzle: true, clue: "Retro console dumps, arcade backups & .rom files" },
+    const MAPPING_RULES = [
+      { ext: 'exe', type: 'game', target: 'C:/Programs/Games' },
+      { ext: 'exe', type: 'app', target: 'C:/Programs/System_Apps' },
+      { ext: 'py', target: 'D:/Code/Python_Scripts' },
+      { ext: 'png', target: 'C:/Pictures/Photos' },
+      { ext: 'jpg', target: 'C:/Pictures/Photos' },
+      { ext: 'svg', target: 'C:/Pictures/Graphics' },
+      { ext: 'mp3', target: 'D:/Audio/Music' },
+      { ext: 'flac', target: 'D:/Audio/Music' },
+      { ext: 'wav', target: 'D:/Audio/SFX' },
+      { ext: 'mp4', target: 'D:/Video/Movies' },
+      { ext: 'pdf', target: 'C:/Documents/Personal' },
+      { ext: 'xlsx', target: 'C:/Documents/Financial' },
+      { ext: 'zip', target: 'D:/Archives/Compressed' },
+      { ext: 'pem', target: 'F:/Security/Keys' },
+      { ext: 'rom', target: 'D:/Emulation/ROMs' },
+      { ext: 'log', target: 'E:/Confidential/Logs' },
+      { ext: 'sql', target: 'E:/Databases/SQL' },
+      { ext: 'sh', target: 'D:/Code/Scripts' },
+      { ext: 'apk', target: 'E:/Mobile/APKs' },
+      { ext: 'iso', target: 'F:/OS_Images/ISOs' }
+    ];
 
-            // DRIVE E:
-            'Quarantine': { drive: 'Drive E:', targetPath: 'Drive E:/Security/Quarantine', icon: 'fa-biohazard text-red-400' },
-            'Security Keys': { drive: 'Drive E:', targetPath: 'Drive E:/Security/Keys', icon: 'fa-key text-yellow-400', isPuzzle: true, clue: "PEM certificates, SSL ciphers & encryption keys" },
-            'Confidential Logs': { drive: 'Drive E:', targetPath: 'Drive E:/Confidential/Logs', icon: 'fa-user-secret text-slate-300', isPuzzle: true, clue: "Secret diaries, crash dumps, system event logs" },
-            'Server Backups': { drive: 'Drive E:', targetPath: 'Drive E:/Backups/Server_DB', icon: 'fa-database text-cyan-300', isPuzzle: true, clue: "SQL dumps, JSON payloads & database exports" },
-            'Mobile APKs': { drive: 'Drive E:', targetPath: 'Drive E:/Mobile/APKs', icon: 'fa-mobile-screen text-green-300', isPuzzle: true, clue: "Android application packages & mobile binaries" },
+    const UPGRADES = [
+      { id: 'shield_boost', name: '🛡️ Hazard Shield Extension', cost: 100, level: 0, max: 3, desc: 'Increases grace period on misplaced hazards by +15 seconds per level.' },
+      { id: 'auto_bot', name: '🤖 Auto-Sort Bot v1', cost: 250, level: 0, max: 5, desc: 'Automatically sorts 1 misplaced file every 10 seconds per level.' },
+      { id: 'quarantine_purge', name: '☣️ Quarantine Auto-Scrubber', cost: 400, level: 0, max: 1, desc: 'Automatically cleans and repairs corrupted files sent to Quarantine Vault.' }
+    ];
 
-            // DRIVE F:
-            'Cloud Sync': { drive: 'Drive F:', targetPath: 'Drive F:/Cloud/Sync', icon: 'fa-cloud text-blue-300' },
-            'Trash Vault': { drive: 'Drive F:', targetPath: 'Drive F:/Vault/Junk', icon: 'fa-trash-can text-red-400' }
-        };
+    let files = [];
+    let currentFolder = 'C:/Downloads/Safe_Staging';
+    let currentPage = 1;
+    const itemsPerPage = 32;
+    let bytesEarned = 0;
+    let selectedFileIds = new Set();
+    let filterStarredOnlyFolders = false;
+    let activeBounties = [];
+    const STORAGE_KEY = 'digital_declutterer_999_advanced_save';
 
-        /* ==========================================================================
-           3. PROCEDURAL GENERATOR FOR EXACTLY 999 FILES
-           ========================================================================== */
-        function generate999Files() {
-            const files = [];
-
-            const namePrefixes = [
-                'vacation_sunset', 'q3_report', 'tax_return_2025', 'family_reunion', 'cyberpunk_beat',
-                'podcast_ep4', 'minecraft_launcher', 'steam_setup', 'data_scraper', 'model_trainer',
-                'spaghetti_code', 'kernel_patch', 'cipher_key_rsa', 'ancient_game', 'boss_diary',
-                'database_backup', 'android_build', 'ubuntu_desktop', 'tmp_cache', 'system_log',
-                'wedding_album', 'financial_audit', 'project_proposal', 'lofi_chill', 'movie_trailer',
-                'compiler_tool', 'calculator_app', 'virus_scanner', 'server_payload', 'retro_arcade'
-            ];
-
-            const categories = [
-                { ext: 'png', targetKey: 'Photos' },
-                { ext: 'jpg', targetKey: 'Photos' },
-                { ext: 'svg', targetKey: 'Design' },
-                { ext: 'pdf', targetKey: 'Financial' },
-                { ext: 'docx', targetKey: 'Legal' },
-                { ext: 'txt', targetKey: 'Personal' },
-                { ext: 'exe', targetKey: 'System Apps', isHazard: true },
-                { ext: 'exe', targetKey: 'Games', isHazard: true },
-                { ext: 'exe', targetKey: 'Utilities', isHazard: true },
-                { ext: 'py', targetKey: 'Python Scripts', isHazard: true },
-                { ext: 'py', targetKey: 'Legacy Code', isHazard: true, isPuzzle: true },
-                { ext: 'mp3', targetKey: 'Music' },
-                { ext: 'wav', targetKey: 'Podcasts' },
-                { ext: 'mp4', targetKey: 'Movies' },
-                { ext: 'mkv', targetKey: 'Clips' },
-                { ext: 'sh', targetKey: 'Shell Scripts', isPuzzle: true },
-                { ext: 'zip', targetKey: 'Archives' },
-                { ext: 'iso', targetKey: 'ISOs', isPuzzle: true },
-                { ext: 'rom', targetKey: 'ROMs', isPuzzle: true },
-                { ext: 'pem', targetKey: 'Security Keys', isPuzzle: true },
-                { ext: 'log', targetKey: 'Confidential Logs', isPuzzle: true },
-                { ext: 'sql', targetKey: 'Server Backups', isPuzzle: true },
-                { ext: 'apk', targetKey: 'Mobile APKs', isPuzzle: true },
-                { ext: 'tmp', targetKey: 'Trash' }
-            ];
-
-            const spawnFolders = [
-                'Drive C:/Downloads/Unsorted_Batch_1',
-                'Drive C:/Downloads/Unsorted_Batch_2',
-                'Drive D:/Backups/Messy_Dump',
-                'Drive E:/Unsorted_Cloud_Sync'
-            ];
-
-            for (let i = 1; i <= 999; i++) {
-                const cat = categories[i % categories.length];
-                const prefix = namePrefixes[i % namePrefixes.length];
-                const fileName = `${prefix}_${i}`;
-
-                let initialPath = spawnFolders[i % spawnFolders.length];
-
-                // EXEs and PYs start in Safe_Staging
-                if (cat.isHazard) {
-                    initialPath = SAFE_STAGING_PATH;
-                }
-
-                const targetInfo = TARGET_FOLDERS[cat.targetKey];
-                const finalTarget = targetInfo ? targetInfo.targetPath : 'Recycle Bin';
-
-                files.push({
-                    id: `file_999_${i}`,
-                    name: fileName,
-                    ext: cat.ext,
-                    targetKey: cat.targetKey,
-                    targetPath: finalTarget,
-                    isHazard: cat.isHazard || false,
-                    isPuzzle: cat.isPuzzle || false,
-                    graceTimer: 30,
-                    isCorrupted: false,
-                    currentPath: initialPath,
-                    size: (Math.random() * 15 + 0.5).toFixed(1)
-                });
-            }
-
-            return files;
-        }
-
-        /* ==========================================================================
-           4. GAME STATE & PAGINATION
-           ========================================================================== */
-        const state = {
-            credits: 500,
-            currentPath: ['Drive C:', 'Downloads', 'Unsorted_Batch_1'],
-            selectedIds: new Set(),
-            viewMode: 'grid',
-            searchQuery: '',
-            filterType: 'all',
-            currentPage: 1,
-            pageSize: 48, // 48 items per page for ultra 60fps rendering
-            files: [],
-            executionShield: false,
-            graceDuration: 30,
-            bounty: null
-        };
-
-        function initFileSystem() {
-            state.files = [];
-
-            // Folders Architecture
-            const folderStructure = [
-                // Drive C:
-                { id: 'f_c_downloads', name: 'Downloads', drive: 'Drive C:', parentPath: 'Drive C:' },
-                { id: 'f_c_safe_staging', name: 'Safe_Staging', drive: 'Drive C:', parentPath: 'Drive C:/Downloads' },
-                { id: 'f_c_unsorted1', name: 'Unsorted_Batch_1', drive: 'Drive C:', parentPath: 'Drive C:/Downloads' },
-                { id: 'f_c_unsorted2', name: 'Unsorted_Batch_2', drive: 'Drive C:', parentPath: 'Drive C:/Downloads' },
-                { id: 'f_c_pictures', name: 'Pictures', drive: 'Drive C:', parentPath: 'Drive C:' },
-                { id: 'f_c_photos', name: 'Photos', drive: 'Drive C:', parentPath: 'Drive C:/Pictures' },
-                { id: 'f_c_design', name: 'Design_Assets', drive: 'Drive C:', parentPath: 'Drive C:/Pictures' },
-                { id: 'f_c_documents', name: 'Documents', drive: 'Drive C:', parentPath: 'Drive C:' },
-                { id: 'f_c_financial', name: 'Financial', drive: 'Drive C:', parentPath: 'Drive C:/Documents' },
-                { id: 'f_c_legal', name: 'Legal', drive: 'Drive C:', parentPath: 'Drive C:/Documents' },
-                { id: 'f_c_personal', name: 'Personal', drive: 'Drive C:', parentPath: 'Drive C:/Documents' },
-                { id: 'f_c_programs', name: 'Programs', drive: 'Drive C:', parentPath: 'Drive C:' },
-                { id: 'f_c_sysapps', name: 'System_Apps', drive: 'Drive C:', parentPath: 'Drive C:/Programs' },
-                { id: 'f_c_games', name: 'Games', drive: 'Drive C:', parentPath: 'Drive C:/Programs' },
-                { id: 'f_c_utilities', name: 'Utilities', drive: 'Drive C:', parentPath: 'Drive C:/Programs' },
-
-                // Drive D:
-                { id: 'f_d_backups', name: 'Backups', drive: 'Drive D:', parentPath: 'Drive D:' },
-                { id: 'f_d_messydump', name: 'Messy_Dump', drive: 'Drive D:', parentPath: 'Drive D:/Backups' },
-                { id: 'f_d_audio', name: 'Audio', drive: 'Drive D:', parentPath: 'Drive D:' },
-                { id: 'f_d_music', name: 'Music', drive: 'Drive D:', parentPath: 'Drive D:/Audio' },
-                { id: 'f_d_podcasts', name: 'Podcasts', drive: 'Drive D:', parentPath: 'Drive D:/Audio' },
-                { id: 'f_d_video', name: 'Video', drive: 'Drive D:', parentPath: 'Drive D:' },
-                { id: 'f_d_movies', name: 'Movies', drive: 'Drive D:', parentPath: 'Drive D:/Video' },
-                { id: 'f_d_clips', name: 'Clips', drive: 'Drive D:', parentPath: 'Drive D:/Video' },
-                { id: 'f_d_code', name: 'Code', drive: 'Drive D:', parentPath: 'Drive D:' },
-                { id: 'f_d_pyscripts', name: 'Python_Scripts', drive: 'Drive D:', parentPath: 'Drive D:/Code' },
-                { id: 'f_d_devtools', name: 'Dev_Tools', drive: 'Drive D:', parentPath: 'Drive D:/Code' },
-                { id: 'f_d_legacy', name: 'Legacy', drive: 'Drive D:', parentPath: 'Drive D:/Code' },
-                { id: 'f_d_scripts', name: 'Scripts', drive: 'Drive D:', parentPath: 'Drive D:/Code' },
-                { id: 'f_d_archives', name: 'Archives', drive: 'Drive D:', parentPath: 'Drive D:' },
-                { id: 'f_d_compressed', name: 'Compressed', drive: 'Drive D:', parentPath: 'Drive D:/Archives' },
-                { id: 'f_d_diskimages', name: 'Disk_Images', drive: 'Drive D:', parentPath: 'Drive D:/Archives' },
-                { id: 'f_d_emulation', name: 'Emulation', drive: 'Drive D:', parentPath: 'Drive D:' },
-                { id: 'f_d_roms', name: 'ROMs', drive: 'Drive D:', parentPath: 'Drive D:/Emulation' },
-
-                // Drive E:
-                { id: 'f_e_unsorted', name: 'Unsorted_Cloud_Sync', drive: 'Drive E:', parentPath: 'Drive E:' },
-                { id: 'f_e_security', name: 'Security', drive: 'Drive E:', parentPath: 'Drive E:' },
-                { id: 'f_e_quarantine', name: 'Quarantine', drive: 'Drive E:', parentPath: 'Drive E:/Security' },
-                { id: 'f_e_keys', name: 'Keys', drive: 'Drive E:', parentPath: 'Drive E:/Security' },
-                { id: 'f_e_confidential', name: 'Confidential', drive: 'Drive E:', parentPath: 'Drive E:' },
-                { id: 'f_e_logs', name: 'Logs', drive: 'Drive E:', parentPath: 'Drive E:/Confidential' },
-                { id: 'f_e_serverdb', name: 'Server_DB', drive: 'Drive E:', parentPath: 'Drive E:/Backups' },
-                { id: 'f_e_mobile', name: 'Mobile', drive: 'Drive E:', parentPath: 'Drive E:' },
-                { id: 'f_e_apks', name: 'APKs', drive: 'Drive E:', parentPath: 'Drive E:/Mobile' },
-
-                // Drive F:
-                { id: 'f_f_cloud', name: 'Cloud', drive: 'Drive F:', parentPath: 'Drive F:' },
-                { id: 'f_f_sync', name: 'Sync', drive: 'Drive F:', parentPath: 'Drive F:/Cloud' },
-                { id: 'f_f_vault', name: 'Vault', drive: 'Drive F:', parentPath: 'Drive F:' },
-                { id: 'f_f_junk', name: 'Junk', drive: 'Drive F:', parentPath: 'Drive F:/Vault' }
-            ];
-
-            folderStructure.forEach(f => {
-                state.files.push({
-                    id: f.id,
-                    name: f.name,
-                    isFolder: true,
-                    drive: f.drive,
-                    parentPath: f.parentPath
-                });
+    // --- INITIALIZATION ---
+    function init() {
+      const savedData = localStorage.getItem(STORAGE_KEY);
+      if (savedData) {
+        try {
+          const parsed = JSON.parse(savedData);
+          files = parsed.files;
+          bytesEarned = parsed.bytesEarned || 0;
+          currentFolder = parsed.currentFolder || 'C:/Downloads/Safe_Staging';
+          if (parsed.upgrades) {
+            parsed.upgrades.forEach(u => {
+              const local = UPGRADES.find(item => item.id === u.id);
+              if (local) local.level = u.level;
             });
-
-            // Generate 999 Files
-            const generated = generate999Files();
-            state.files.push(...generated);
-
-            triggerVIPBounty();
-            renderPuzzleGuideModal();
+          }
+          activeBounties = parsed.activeBounties || generateBounties();
+        } catch(e) {
+          generateFreshFiles();
         }
-
-        /* ==========================================================================
-           5. HAZARD & CORRUPTION ENGINE
-           ========================================================================== */
-        function getFullPathString(pathArr) {
-            return pathArr.join('/');
-        }
-
-        function isFileCorrectlySorted(file) {
-            if (file.isFolder) return true;
-            if (file.targetKey === 'Trash') return file.currentPath === 'Recycle Bin';
-            return file.currentPath === file.targetPath;
-        }
-
-        function tickHazardTimers() {
-            if (state.executionShield) {
-                document.getElementById('hazard-warning-banner').classList.add('hidden');
-                document.getElementById('shield-indicator-dot').className = "w-2.5 h-2.5 rounded-full bg-emerald-400 inline-block animate-pulse";
-                document.getElementById('shield-status-text').innerText = 'Execution Shield: ACTIVE (100% Protection)';
-                document.getElementById('shield-status-text').className = 'text-emerald-400 font-bold';
-                return;
-            }
-
-            let activeHazardsCount = 0;
-
-            state.files.forEach(f => {
-                if (!f.isFolder && f.isHazard) {
-                    const isSorted = isFileCorrectlySorted(f);
-                    const inSafeStaging = f.currentPath === SAFE_STAGING_PATH;
-
-                    if (!isSorted && !inSafeStaging && !f.isCorrupted) {
-                        activeHazardsCount++;
-                        if (f.graceTimer > 0) {
-                            f.graceTimer -= 1;
-                        } else {
-                            if (Math.random() < 0.25) {
-                                f.isCorrupted = true;
-                                f.name = `[CORRUPTED]_${f.name}`;
-                                audio.corrupt();
-                                showPopupAlert(`☣️ CORRUPTION ALARM: Misplaced ${f.name}.${f.ext} has glitched out!`);
-                            }
-                        }
-                    } else if (inSafeStaging) {
-                        f.graceTimer = state.graceDuration;
-                    }
-                }
-            });
-
-            const banner = document.getElementById('hazard-warning-banner');
-            if (activeHazardsCount > 0) {
-                banner.classList.remove('hidden');
-                document.getElementById('hazard-countdown-badge').innerText = `${activeHazardsCount} HAZARD(S) RISK ACTIVE`;
-            } else {
-                banner.classList.add('hidden');
-            }
-
-            renderExplorer();
-        }
-
-        setInterval(tickHazardTimers, 1000);
-
-        /* ==========================================================================
-           6. HIGH-PERFORMANCE RENDER ENGINE (PAGINATED AT 60 FPS)
-           ========================================================================== */
-        function renderExplorer() {
-            const container = document.getElementById('file-container');
-            container.innerHTML = '';
-
-            const currentFullPath = getFullPathString(state.currentPath);
-
-            // Filter Pipeline
-            let filteredList = state.files.filter(f => f.parentPath === currentFullPath || f.currentPath === currentFullPath);
-
-            if (state.searchQuery.trim() !== '') {
-                const q = state.searchQuery.toLowerCase();
-                filteredList = state.files.filter(f => 
-                    f.name.toLowerCase().includes(q) || 
-                    f.ext?.toLowerCase().includes(q) || 
-                    f.targetKey?.toLowerCase().includes(q)
-                );
-            }
-
-            if (state.filterType === 'misplaced') {
-                filteredList = filteredList.filter(f => !f.isFolder && !isFileCorrectlySorted(f));
-            } else if (state.filterType === 'hazards') {
-                filteredList = filteredList.filter(f => !f.isFolder && f.isHazard);
-            } else if (state.filterType === 'puzzle') {
-                filteredList = filteredList.filter(f => !f.isFolder && f.isPuzzle);
-            }
-
-            // Sort folders first
-            filteredList.sort((a, b) => (b.isFolder ? 1 : 0) - (a.isFolder ? 1 : 0));
-
-            // Pagination calculation
-            const totalItems = filteredList.length;
-            const totalPages = Math.max(1, Math.ceil(totalItems / state.pageSize));
-            if (state.currentPage > totalPages) state.currentPage = totalPages;
-
-            const startIndex = (state.currentPage - 1) * state.pageSize;
-            const pageItems = filteredList.slice(startIndex, startIndex + state.pageSize);
-
-            document.getElementById('pg-info').innerText = `Page ${state.currentPage} / ${totalPages} (${totalItems} items)`;
-
-            if (state.viewMode === 'grid') {
-                container.className = "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3.5 min-h-full content-start";
-            } else {
-                container.className = "flex flex-col space-y-1.5 w-full";
-            }
-
-            pageItems.forEach(item => {
-                const isSelected = state.selectedIds.has(item.id);
-                const itemEl = document.createElement('div');
-                itemEl.dataset.id = item.id;
-
-                if (item.isFolder) {
-                    itemEl.className = `p-3.5 rounded-xl border flex items-center gap-3 cursor-pointer transition select-none shadow-sm ${
-                        isSelected 
-                            ? 'bg-blue-600/30 border-blue-500 text-blue-200 ring-2 ring-blue-500/50' 
-                            : 'bg-slate-900 border-slate-800 hover:border-blue-500/50 hover:bg-slate-800/80'
-                    }`;
-
-                    itemEl.innerHTML = `
-                        <i class="fa-solid fa-folder text-2xl text-amber-400"></i>
-                        <div class="flex-1 truncate">
-                            <div class="font-bold text-xs text-slate-100 truncate">${item.name}</div>
-                            <div class="text-[10px] text-slate-400 font-mono">Folder</div>
-                        </div>
-                        <i class="fa-solid fa-chevron-right text-slate-600 text-xs"></i>
-                    `;
-
-                    itemEl.onclick = (e) => {
-                        e.stopPropagation();
-                        openFolder(item.name);
-                    };
-
-                    itemEl.ondragover = (e) => { e.preventDefault(); itemEl.classList.add('drag-over-folder'); };
-                    itemEl.ondragleave = () => itemEl.classList.remove('drag-over-folder');
-                    itemEl.ondrop = (e) => handleFolderDrop(e, `${currentFullPath}/${item.name}`);
-
-                } else {
-                    const isSorted = isFileCorrectlySorted(item);
-                    const inSafeStaging = item.currentPath === SAFE_STAGING_PATH;
-                    const isTicking = !isSorted && !inSafeStaging && item.isHazard && !item.isCorrupted;
-
-                    const iconClass = (TARGET_FOLDERS[item.targetKey]?.icon) || 'fa-file text-slate-400';
-
-                    if (state.viewMode === 'grid') {
-                        itemEl.className = `p-3 rounded-xl border flex flex-col items-center justify-between cursor-pointer transition select-none relative shadow-md ${
-                            item.isCorrupted ? 'corrupted-item' : (
-                                isTicking ? 'border-rose-500/80 bg-rose-950/20 hazard-active' : (
-                                    inSafeStaging ? 'border-amber-500/50 bg-amber-950/10' : (
-                                        isSelected 
-                                            ? 'bg-blue-600/25 border-blue-500 text-blue-200 ring-2 ring-blue-500/40' 
-                                            : 'bg-slate-950/90 border-slate-800 hover:border-slate-700 hover:bg-slate-900'
-                                    )
-                                )
-                            )
-                        }`;
-
-                        let badgeHtml = '';
-                        if (isSorted) {
-                            badgeHtml = `<span class="text-emerald-400 bg-emerald-950 border border-emerald-500/50 px-1.5 py-0.5 rounded-full font-bold text-[10px]"><i class="fa-solid fa-check"></i></span>`;
-                        } else if (inSafeStaging) {
-                            badgeHtml = `<span class="text-amber-300 bg-amber-950 border border-amber-500/50 px-1.5 py-0.5 rounded-full font-bold text-[10px]"><i class="fa-solid fa-shield"></i></span>`;
-                        } else if (isTicking) {
-                            badgeHtml = `<span class="text-rose-300 bg-rose-950 border border-rose-500/60 px-1.5 py-0.5 rounded-full font-mono text-[10px] animate-pulse">${item.graceTimer}s</span>`;
-                        } else {
-                            badgeHtml = `<span class="text-rose-400 bg-rose-950 border border-rose-500/40 px-1.5 py-0.5 rounded-full font-bold text-[10px]"><i class="fa-solid fa-xmark"></i></span>`;
-                        }
-
-                        itemEl.innerHTML = `
-                            <div class="absolute top-2 right-2 flex items-center gap-1">${badgeHtml}</div>
-                            ${item.isPuzzle ? '<div class="absolute top-2 left-2 text-purple-400 text-[10px] font-mono"><i class="fa-solid fa-puzzle-piece"></i></div>' : ''}
-                            <div class="text-3xl my-2"><i class="fa-solid ${iconClass}"></i></div>
-                            <div class="w-full text-center">
-                                <div class="text-xs font-bold truncate text-slate-200">${item.name}.${item.ext}</div>
-                                <div class="text-[10px] font-mono text-slate-400 mt-0.5">${item.size} MB</div>
-                            </div>
-                        `;
-                    } else {
-                        itemEl.className = `px-3.5 py-2 rounded-lg border flex items-center justify-between cursor-pointer transition text-xs ${
-                            item.isCorrupted ? 'corrupted-item' : (
-                                isTicking ? 'border-rose-500/80 bg-rose-950/20' : (
-                                    isSelected ? 'bg-blue-600/30 border-blue-500 text-blue-200' : 'bg-slate-950/90 border-slate-800 hover:border-slate-700'
-                                )
-                            )
-                        }`;
-
-                        itemEl.innerHTML = `
-                            <div class="flex items-center gap-3 flex-1 truncate">
-                                <i class="fa-solid ${iconClass} text-lg"></i>
-                                <span class="font-bold text-slate-200 truncate">${item.name}.${item.ext}</span>
-                                ${item.isPuzzle ? '<span class="text-[9px] bg-purple-900/60 text-purple-300 px-1.5 py-0.5 rounded font-mono">PUZZLE</span>' : ''}
-                            </div>
-                            <div class="w-24 font-mono text-slate-400">${item.size} MB</div>
-                            <div class="w-48 text-right font-mono text-[11px]">
-                                ${isSorted 
-                                    ? '<span class="text-emerald-400 font-bold"><i class="fa-solid fa-check"></i> Correct</span>' 
-                                    : (inSafeStaging 
-                                        ? '<span class="text-amber-300 font-bold"><i class="fa-solid fa-shield"></i> Staged</span>' 
-                                        : `<span class="text-rose-400 font-bold">Target: ${item.targetKey}</span>`
-                                    )
-                                }
-                            </div>
-                        `;
-                    }
-
-                    itemEl.onclick = (e) => handleFileClick(e, item);
-                    itemEl.oncontextmenu = (e) => handleContextMenu(e, item);
-                    itemEl.draggable = true;
-                    itemEl.ondragstart = (e) => handleDragStart(e, item);
-                }
-
-                container.appendChild(itemEl);
-            });
-
-            renderBreadcrumbs();
-            renderSidebarTrees();
-            updateGlobalProgress();
-        }
-
-        function openFolder(folderName) {
-            audio.openFolder();
-            state.currentPath.push(folderName);
-            state.selectedIds.clear();
-            state.currentPage = 1;
-            renderExplorer();
-        }
-
-        function renderBreadcrumbs() {
-            const bar = document.getElementById('breadcrumb-bar');
-            bar.innerHTML = '';
-            state.currentPath.forEach((folder, idx) => {
-                const btn = document.createElement('button');
-                btn.className = "hover:text-blue-400 font-bold transition flex items-center gap-1.5 text-slate-200";
-                btn.innerHTML = `${idx === 0 ? '<i class="fa-solid fa-hard-drive text-amber-400"></i>' : '<i class="fa-solid fa-angle-right text-slate-600 text-[10px]"></i>'} ${folder}`;
-                btn.onclick = () => {
-                    state.currentPath = state.currentPath.slice(0, idx + 1);
-                    state.currentPage = 1;
-                    renderExplorer();
-                };
-                bar.appendChild(btn);
-            });
-        }
-
-        function renderSidebarTrees() {
-            const driveList = document.getElementById('drive-selector-list');
-            driveList.innerHTML = '';
-            ['Drive C:', 'Drive D:', 'Drive E:', 'Drive F:'].forEach(drv => {
-                const isCurrent = state.currentPath[0] === drv;
-                const div = document.createElement('div');
-                div.className = `p-2 rounded-xl flex items-center gap-2 cursor-pointer transition ${isCurrent ? 'bg-blue-600 text-white font-bold shadow' : 'hover:bg-slate-900 text-slate-400'}`;
-                div.innerHTML = `<i class="fa-solid fa-hard-drive ${isCurrent ? 'text-amber-400' : ''}"></i> <span>${drv}</span>`;
-                div.onclick = () => {
-                    state.currentPath = [drv];
-                    state.currentPage = 1;
-                    renderExplorer();
-                };
-                driveList.appendChild(div);
-            });
-
-            const tree = document.getElementById('target-folder-tree');
-            tree.innerHTML = '';
-
-            // Safe Staging
-            const safeStagingDiv = document.createElement('div');
-            safeStagingDiv.className = "p-2 rounded-xl border border-amber-500/40 bg-amber-950/20 hover:bg-amber-900/40 flex items-center justify-between cursor-pointer transition text-amber-300 font-bold mb-1.5 text-xs";
-            safeStagingDiv.innerHTML = `
-                <span class="flex items-center gap-2"><i class="fa-solid fa-shield-halved text-amber-400"></i> Safe_Staging</span>
-                <span class="text-[9px] bg-amber-500/20 px-1.5 py-0.5 rounded">STAGING</span>
-            `;
-            safeStagingDiv.onclick = () => {
-                state.currentPath = ['Drive C:', 'Downloads', 'Safe_Staging'];
-                state.currentPage = 1;
-                renderExplorer();
-            };
-            safeStagingDiv.ondragover = (e) => { e.preventDefault(); safeStagingDiv.classList.add('drag-over-folder'); };
-            safeStagingDiv.ondragleave = () => safeStagingDiv.classList.remove('drag-over-folder');
-            safeStagingDiv.ondrop = (e) => handleFolderDrop(e, SAFE_STAGING_PATH);
-            tree.appendChild(safeStagingDiv);
-
-            Object.keys(TARGET_FOLDERS).forEach(key => {
-                const info = TARGET_FOLDERS[key];
-                const div = document.createElement('div');
-                div.className = "p-1.5 px-2 rounded-lg border border-slate-800 bg-slate-900/60 hover:bg-slate-800 hover:border-blue-500/50 flex items-center justify-between cursor-pointer transition text-slate-300 text-xs";
-                div.innerHTML = `
-                    <span class="flex items-center gap-2 truncate">
-                        <i class="fa-solid fa-folder text-amber-400"></i> /${key}
-                    </span>
-                    <span class="text-[9px] text-slate-500 font-mono">${info.drive}</span>
-                `;
-
-                div.onclick = () => {
-                    state.currentPath = info.targetPath.split('/');
-                    state.currentPage = 1;
-                    renderExplorer();
-                };
-
-                div.ondragover = (e) => { e.preventDefault(); div.classList.add('drag-over-folder'); };
-                div.ondragleave = () => div.classList.remove('drag-over-folder');
-                div.ondrop = (e) => handleFolderDrop(e, info.targetPath);
-
-                tree.appendChild(div);
-            });
-        }
-
-        function updateGlobalProgress() {
-            const nonFolders = state.files.filter(f => !f.isFolder);
-            const correctCount = nonFolders.filter(f => isFileCorrectlySorted(f)).length;
-            const total = nonFolders.length;
-            const pct = Math.round((correctCount / total) * 100);
-
-            const bar = document.getElementById('global-progress-bar');
-            bar.style.width = `${pct}%`;
-            document.getElementById('global-progress-text').innerText = `${correctCount} / 999 (${pct}%)`;
-
-            document.getElementById('status-selected').innerText = `${state.selectedIds.size} files selected`;
-            document.getElementById('player-credits').innerText = state.credits.toLocaleString();
-        }
-
-        /* ==========================================================================
-           7. DRAG, DROP & BATCH ACTIONS
-           ========================================================================== */
-        function handleFileClick(e, file) {
-            audio.click();
-            if (e.ctrlKey || e.metaKey) {
-                if (state.selectedIds.has(file.id)) state.selectedIds.delete(file.id);
-                else state.selectedIds.add(file.id);
-            } else {
-                state.selectedIds.clear();
-                state.selectedIds.add(file.id);
-            }
-            renderExplorer();
-        }
-
-        function handleDragStart(e, file) {
-            if (!state.selectedIds.has(file.id)) {
-                state.selectedIds.clear();
-                state.selectedIds.add(file.id);
-                renderExplorer();
-            }
-            e.dataTransfer.setData('text/plain', JSON.stringify(Array.from(state.selectedIds)));
-        }
-
-        function handleFolderDrop(e, destinationPath) {
-            e.preventDefault();
-            const raw = e.dataTransfer.getData('text/plain');
-            if (!raw) return;
-            const movedIds = JSON.parse(raw);
-
-            let awardCredits = 0;
-            state.files.forEach(f => {
-                if (movedIds.includes(f.id) && !f.isFolder) {
-                    f.currentPath = destinationPath;
-
-                    if (isFileCorrectlySorted(f)) {
-                        awardCredits += 50;
-                    }
-                }
-            });
-
-            if (awardCredits > 0) {
-                state.credits += awardCredits;
-                audio.correct();
-                showPopupAlert(`🎉 PERFECT SORT! +${awardCredits} Bytes Earned!`);
-            } else {
-                audio.drop();
-            }
-
-            state.selectedIds.clear();
-            checkBountyCompletion();
-            renderExplorer();
-        }
-
-        function handleContextMenu(e, file) {
-            e.preventDefault();
-            if (!state.selectedIds.has(file.id)) {
-                state.selectedIds.clear();
-                state.selectedIds.add(file.id);
-                renderExplorer();
-            }
-            const menu = document.getElementById('context-menu');
-            menu.style.left = `${e.clientX}px`;
-            menu.style.top = `${e.clientY}px`;
-            menu.classList.remove('hidden');
-        }
-
-        function selectAllMisplaced() {
-            state.selectedIds.clear();
-            const currentFullPath = getFullPathString(state.currentPath);
-            state.files.filter(f => f.currentPath === currentFullPath && !f.isFolder && !isFileCorrectlySorted(f))
-                       .forEach(f => state.selectedIds.add(f.id));
-            renderExplorer();
-        }
-
-        function autoSortSafeFiles() {
-            let sortedCount = 0;
-            const currentFullPath = getFullPathString(state.currentPath);
-            state.files.forEach(f => {
-                if (f.currentPath === currentFullPath && !f.isFolder && !f.isHazard && !f.isCorrupted) {
-                    f.currentPath = f.targetPath;
-                    sortedCount++;
-                }
-            });
-            audio.correct();
-            showPopupAlert(`✨ Auto-Sorted ${sortedCount} easy files to proper target folders!`);
-            renderExplorer();
-        }
-
-        /* ==========================================================================
-           8. BOUNTIES & MODALS
-           ========================================================================== */
-        function triggerVIPBounty() {
-            state.bounty = {
-                desc: 'Find and move 5 ROM dumps to D:/Emulation/ROMs!',
-                targetPath: 'Drive D:/Emulation/ROMs',
-                ext: 'rom',
-                time: 45,
-                reward: 500
-            };
-
-            const card = document.getElementById('urgent-bounty-card');
-            card.classList.remove('hidden');
-            document.getElementById('bounty-description').innerText = state.bounty.desc;
-
-            const timerEl = document.getElementById('bounty-timer');
-            const interval = setInterval(() => {
-                if (!state.bounty) { clearInterval(interval); return; }
-                state.bounty.time--;
-                timerEl.innerText = `${state.bounty.time}s`;
-
-                if (state.bounty.time <= 0) {
-                    clearInterval(interval);
-                    card.classList.add('hidden');
-                    state.bounty = null;
-                }
-            }, 1000);
-        }
-
-        function checkBountyCompletion() {
-            if (!state.bounty) return;
-            const sortedCount = state.files.filter(f => f.ext === state.bounty.ext && f.currentPath === state.bounty.targetPath).length;
-            if (sortedCount >= 5) {
-                state.credits += state.bounty.reward;
-                audio.correct();
-                showPopupAlert(`🏆 VIP BOUNTY COMPLETED! +${state.bounty.reward} Bytes Reward!`);
-                document.getElementById('urgent-bounty-card').classList.add('hidden');
-                state.bounty = null;
-            }
-        }
-
-        function renderShopModal() {
-            document.getElementById('shop-balance-display').innerText = state.credits.toLocaleString();
-            const container = document.getElementById('shop-items-container');
-            container.innerHTML = `
-                <div class="p-3 bg-slate-950 rounded-xl border border-slate-800 flex justify-between items-center">
-                    <div>
-                        <div class="font-bold text-slate-200">Execution Shield v1.0</div>
-                        <div class="text-[11px] text-slate-400">Completely protects all misplaced .exe and .py files from corrupting.</div>
-                    </div>
-                    <button class="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold rounded-xl" onclick="buyShield()">450 B</button>
-                </div>
-            `;
-        }
-
-        function buyShield() {
-            if (state.credits >= 450 && !state.executionShield) {
-                state.credits -= 450;
-                state.executionShield = true;
-                audio.correct();
-                showPopupAlert('🛡️ Execution Shield Activated!');
-                renderShopModal();
-                updateGlobalProgress();
-            }
-        }
-
-        function renderPuzzleGuideModal() {
-            const list = document.getElementById('puzzle-guide-list');
-            list.innerHTML = '';
-            Object.keys(TARGET_FOLDERS).forEach(k => {
-                const item = TARGET_FOLDERS[k];
-                if (item.isPuzzle) {
-                    const div = document.createElement('div');
-                    div.className = "p-2.5 bg-slate-950 rounded-xl border border-purple-500/30 flex items-center justify-between";
-                    div.innerHTML = `
-                        <div>
-                            <span class="font-bold text-purple-300">/${k}</span>
-                            <span class="text-slate-400 block text-[11px]">${item.clue}</span>
-                        </div>
-                        <span class="text-[10px] bg-purple-950 border border-purple-500/40 text-purple-300 px-2 py-0.5 rounded font-mono">${item.targetPath}</span>
-                    `;
-                    list.appendChild(div);
-                }
-            });
-        }
-
-        function showPopupAlert(msg) {
-            const container = document.getElementById('popup-container');
-            const toast = document.createElement('div');
-            toast.className = "bg-slate-900 border border-blue-500/50 p-3 rounded-xl shadow-2xl text-xs text-slate-100 flex items-center gap-2 pointer-events-auto transition-all duration-300";
-            toast.innerHTML = `<i class="fa-solid fa-circle-info text-blue-400 text-base"></i> <span>${msg}</span>`;
-            container.appendChild(toast);
-            setTimeout(() => toast.remove(), 4000);
-        }
-
-        /* ==========================================================================
-           9. INITIALIZATION & SHORTCUTS
-           ========================================================================== */
-        window.addEventListener('DOMContentLoaded', () => {
-            initFileSystem();
-            renderExplorer();
-
-            document.getElementById('nav-up').onclick = () => {
-                if (state.currentPath.length > 1) {
-                    state.currentPath.pop();
-                    state.currentPage = 1;
-                    renderExplorer();
-                }
-            };
-            document.getElementById('nav-refresh').onclick = () => renderExplorer();
-
-            document.getElementById('search-input').oninput = (e) => {
-                state.searchQuery = e.target.value;
-                state.currentPage = 1;
-                renderExplorer();
-            };
-
-            // Filter Chips
-            document.querySelectorAll('.filter-chip').forEach(btn => {
-                btn.onclick = () => {
-                    document.querySelectorAll('.filter-chip').forEach(c => c.className = "filter-chip px-2.5 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300");
-                    btn.className = "filter-chip px-2.5 py-1 rounded-md bg-blue-600 text-white font-bold";
-                    state.filterType = btn.dataset.filter;
-                    state.currentPage = 1;
-                    renderExplorer();
-                };
-            });
-
-            // Pagination Controls
-            document.getElementById('pg-prev').onclick = () => {
-                if (state.currentPage > 1) {
-                    state.currentPage--;
-                    renderExplorer();
-                }
-            };
-            document.getElementById('pg-next').onclick = () => {
-                state.currentPage++;
-                renderExplorer();
-            };
-
-            // View Mode
-            document.getElementById('view-grid-btn').onclick = () => {
-                state.viewMode = 'grid';
-                document.getElementById('view-grid-btn').className = "p-1.5 px-3 bg-blue-600 text-white font-semibold";
-                document.getElementById('view-list-btn').className = "p-1.5 px-3 text-slate-400 hover:text-slate-200 font-semibold";
-                renderExplorer();
-            };
-            document.getElementById('view-list-btn').onclick = () => {
-                state.viewMode = 'list';
-                document.getElementById('view-list-btn').className = "p-1.5 px-3 bg-blue-600 text-white font-semibold";
-                document.getElementById('view-grid-btn').className = "p-1.5 px-3 text-slate-400 hover:text-slate-200 font-semibold";
-                renderExplorer();
-            };
-
-            // Buttons & Modals
-            document.getElementById('btn-select-wrong').onclick = selectAllMisplaced;
-            document.getElementById('btn-auto-sort').onclick = autoSortSafeFiles;
-            document.getElementById('btn-shop').onclick = () => {
-                renderShopModal();
-                document.getElementById('modal-shop').classList.remove('hidden');
-            };
-            document.getElementById('btn-puzzle-helper').onclick = () => {
-                document.getElementById('modal-puzzle-helper').classList.remove('hidden');
-            };
-
-            document.querySelectorAll('.close-modal').forEach(btn => {
-                btn.onclick = () => document.getElementById('modal-shop').classList.add('hidden');
-            });
-            document.querySelectorAll('.close-puzzle-modal').forEach(btn => {
-                btn.onclick = () => document.getElementById('modal-puzzle-helper').classList.add('hidden');
-            });
-
-            document.getElementById('btn-audio-toggle').onclick = () => {
-                audio.enabled = !audio.enabled;
-                document.getElementById('audio-icon').className = audio.enabled ? "fa-solid fa-volume-high" : "fa-solid fa-volume-xmark text-rose-400";
-            };
-
-            // Keyboard Shortcuts
-            window.addEventListener('keydown', (e) => {
-                if (e.target.tagName === 'INPUT') return;
-                if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a') {
-                    e.preventDefault();
-                    const currentFullPath = getFullPathString(state.currentPath);
-                    state.files.filter(f => f.currentPath === currentFullPath).forEach(f => state.selectedIds.add(f.id));
-                    renderExplorer();
-                } else if (e.key === 'Delete') {
-                    state.files.forEach(f => {
-                        if (state.selectedIds.has(f.id) && !f.isFolder) {
-                            f.currentPath = 'Recycle Bin';
-                        }
-                    });
-                    state.selectedIds.clear();
-                    renderExplorer();
-                }
-            });
-
-            window.addEventListener('click', () => {
-                document.getElementById('context-menu').classList.add('hidden');
-            });
+      } else {
+        generateFreshFiles();
+      }
+
+      setupEventListeners();
+      startAutomationTimers();
+      renderAll();
+    }
+
+    function generateBounties() {
+      return [
+        { id: 1, ext: 'pem', targetCount: 5, reward: 150, title: 'Secure Cryptographic Keys' },
+        { id: 2, ext: 'sql', targetCount: 5, reward: 200, title: 'Organize Database Dumps' },
+        { id: 3, ext: 'rom', targetCount: 5, reward: 175, title: 'Archive Retro Game ROMs' }
+      ];
+    }
+
+    function generateFreshFiles() {
+      files = [];
+      const prefixes = ['report', 'backup', 'data', 'script', 'asset', 'system', 'config', 'user', 'vault', 'archive', 'photo', 'audio', 'video'];
+      const categories = [
+        { ext: 'exe', icons: '⚙️', type: 'app' },
+        { ext: 'exe', icons: '🎮', type: 'game' },
+        { ext: 'py', icons: '🐍' },
+        { ext: 'png', icons: '🖼️' },
+        { ext: 'jpg', icons: '📷' },
+        { ext: 'svg', icons: '🎨' },
+        { ext: 'mp3', icons: '🎵' },
+        { ext: 'wav', icons: '🔊' },
+        { ext: 'mp4', icons: '🎬' },
+        { ext: 'pdf', icons: '📄' },
+        { ext: 'xlsx', icons: '📊' },
+        { ext: 'zip', icons: '📦' },
+        { ext: 'pem', icons: '🔑' },
+        { ext: 'rom', icons: '🕹️' },
+        { ext: 'log', icons: '📜' },
+        { ext: 'sql', icons: '🗄️' },
+        { ext: 'sh', icons: '💻' },
+        { ext: 'apk', icons: '📱' },
+        { ext: 'iso', icons: '💿' }
+      ];
+
+      const initialUnsortedFolders = [
+        'C:/Downloads/Unsorted_Batch_1',
+        'C:/Downloads/Unsorted_Batch_2',
+        'D:/Backups/Messy_Dump',
+        'E:/Unsorted_Cloud_Sync'
+      ];
+
+      for (let i = 1; i <= 999; i++) {
+        const cat = categories[Math.floor(Math.random() * categories.length)];
+        const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+        const name = `${prefix}_${i}_${Math.floor(Math.random()*1000)}.${cat.ext}`;
+        
+        let rule = MAPPING_RULES.find(r => r.ext === cat.ext && (!r.type || r.type === cat.type));
+        let targetFolder = rule ? rule.target : 'C:/Documents/Personal';
+
+        let currentLoc = (cat.ext === 'exe' || cat.ext === 'py') 
+          ? 'C:/Downloads/Safe_Staging' 
+          : initialUnsortedFolders[Math.floor(Math.random() * initialUnsortedFolders.length)];
+
+        files.push({
+          id: i,
+          name: name,
+          ext: cat.ext,
+          icon: cat.icons,
+          currentFolder: currentLoc,
+          targetFolder: targetFolder,
+          graceTimer: (cat.ext === 'exe' || cat.ext === 'py') ? 30 : null,
+          corrupted: false,
+          starred: false,
+          size: `${Math.floor(Math.random() * 50 + 1)} MB`
         });
-    </script>
+      }
+      activeBounties = generateBounties();
+      saveState();
+    }
+
+    function saveState() {
+      const state = {
+        files: files,
+        bytesEarned: bytesEarned,
+        currentFolder: currentFolder,
+        upgrades: UPGRADES.map(u => ({ id: u.id, level: u.level })),
+        activeBounties: activeBounties
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      
+      const indicator = document.getElementById('saveIndicator');
+      indicator.classList.add('active');
+      setTimeout(() => indicator.classList.remove('active'), 1000);
+    }
+
+    // --- RENDER LOGIC ---
+    function renderAll() {
+      renderFolderTree();
+      renderBreadcrumb();
+      renderFileList();
+      renderStats();
+      renderBounties();
+    }
+
+    function renderFolderTree() {
+      const tree = document.getElementById('folderTree');
+      tree.innerHTML = '';
+
+      Object.keys(FOLDERS).forEach(path => {
+        const folderFiles = files.filter(f => f.currentFolder === path);
+        const count = folderFiles.length;
+        const info = FOLDERS[path];
+
+        const li = document.createElement('li');
+        li.className = `folder-item ${path === currentFolder ? 'active' : ''}`;
+        
+        let tagHtml = '';
+        if (info.tag === 'safe') tagHtml = `<span class="folder-tag tag-safe">SAFE</span>`;
+        if (info.tag === 'vault') tagHtml = `<span class="folder-tag tag-vault">VAULT</span>`;
+
+        li.innerHTML = `
+          <span>📁</span>
+          <span style="flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis;">${info.label}</span>
+          ${tagHtml}
+          <span class="folder-count">${count}</span>
+        `;
+
+        li.onclick = () => {
+          currentFolder = path;
+          currentPage = 1;
+          renderAll();
+        };
+
+        li.ondragover = (e) => { e.preventDefault(); li.classList.add('drag-over'); };
+        li.ondragleave = () => li.classList.remove('drag-over');
+        li.ondrop = (e) => {
+          e.preventDefault();
+          li.classList.remove('drag-over');
+          moveSelectedFilesTo(path);
+        };
+
+        tree.appendChild(li);
+      });
+    }
+
+    function renderBreadcrumb() {
+      document.getElementById('breadcrumbTrail').textContent = currentFolder;
+    }
+
+    function renderFileList() {
+      const container = document.getElementById('fileContainer');
+      container.innerHTML = '';
+
+      const search = document.getElementById('searchInput').value.toLowerCase();
+      const filterMode = document.getElementById('statusFilter').value;
+
+      let currentFiles = files.filter(f => f.currentFolder === currentFolder);
+
+      if (search) {
+        currentFiles = currentFiles.filter(f => f.name.toLowerCase().includes(search));
+      }
+
+      if (filterMode === 'misplaced') currentFiles = currentFiles.filter(f => f.currentFolder !== f.targetFolder);
+      if (filterMode === 'correct') currentFiles = currentFiles.filter(f => f.currentFolder === f.targetFolder);
+      if (filterMode === 'hazards') currentFiles = currentFiles.filter(f => f.ext === 'exe' || f.ext === 'py');
+      if (filterMode === 'corrupted') currentFiles = currentFiles.filter(f => f.corrupted);
+      if (filterMode === 'starred') currentFiles = currentFiles.filter(f => f.starred);
+
+      const totalPages = Math.max(1, Math.ceil(currentFiles.length / itemsPerPage));
+      currentPage = Math.min(currentPage, totalPages);
+
+      const start = (currentPage - 1) * itemsPerPage;
+      const pagedFiles = currentFiles.slice(start, start + itemsPerPage);
+
+      pagedFiles.forEach(file => {
+        const isCorrect = file.currentFolder === file.targetFolder;
+        const isStaged = file.currentFolder === 'C:/Downloads/Safe_Staging' && (file.ext === 'exe' || file.ext === 'py');
+
+        const card = document.createElement('div');
+        card.className = `file-card ${selectedFileIds.has(file.id) ? 'selected' : ''} ${file.corrupted ? 'corrupted' : ''} ${file.starred ? 'starred' : ''}`;
+        card.draggable = true;
+
+        let badgeHtml = '';
+        if (isCorrect) badgeHtml = `<span class="status-badge status-correct">✓</span>`;
+        else if (isStaged) badgeHtml = `<span class="staged-badge">🛡️ Staged</span>`;
+        else if (file.graceTimer !== null && file.graceTimer > 0) badgeHtml = `<span class="grace-badge">⚠️ ${file.graceTimer}s</span>`;
+        else badgeHtml = `<span class="status-badge status-wrong">✗</span>`;
+
+        card.innerHTML = `
+          <div class="file-icon">${file.icon}</div>
+          <div class="file-info">
+            <div class="file-name" title="${file.name}">${file.name}</div>
+            <div class="file-meta">
+              <span>${file.size}</span>
+              ${badgeHtml}
+            </div>
+          </div>
+          <span class="star-btn ${file.starred ? 'active' : ''}" title="Star/Bookmark">⭐</span>
+        `;
+
+        card.querySelector('.star-btn').onclick = (e) => {
+          e.stopPropagation();
+          file.starred = !file.starred;
+          saveState();
+          renderFileList();
+        };
+
+        card.onclick = (e) => {
+          if (e.ctrlKey) {
+            if (selectedFileIds.has(file.id)) selectedFileIds.delete(file.id);
+            else selectedFileIds.add(file.id);
+          } else {
+            selectedFileIds.clear();
+            selectedFileIds.add(file.id);
+          }
+          updateBatchBar();
+          renderFileList();
+        };
+
+        card.ondragstart = () => {
+          if (!selectedFileIds.has(file.id)) {
+            selectedFileIds.clear();
+            selectedFileIds.add(file.id);
+            updateBatchBar();
+            renderFileList();
+          }
+        };
+
+        container.appendChild(card);
+      });
+
+      document.getElementById('fileCountDisplay').textContent = `Showing ${pagedFiles.length} of ${currentFiles.length} files`;
+      document.getElementById('pageIndicator').textContent = `Page ${currentPage} of ${totalPages}`;
+    }
+
+    function renderStats() {
+      const correctCount = files.filter(f => f.currentFolder === f.targetFolder).length;
+      const pct = ((correctCount / files.length) * 100).toFixed(1);
+
+      document.getElementById('progressFill').style.width = `${pct}%`;
+      document.getElementById('progressText').textContent = `${correctCount} / 999 (${pct}%)`;
+      document.getElementById('byteCount').textContent = `${bytesEarned} B`;
+    }
+
+    function renderBounties() {
+      const container = document.getElementById('bountyList');
+      container.innerHTML = '';
+
+      activeBounties.forEach(b => {
+        const sortedCount = files.filter(f => f.ext === b.ext && f.currentFolder === f.targetFolder).length;
+        const complete = sortedCount >= b.targetCount;
+
+        const div = document.createElement('div');
+        div.className = 'bounty-item';
+        div.innerHTML = `
+          <span>${b.title} (${Math.min(sortedCount, b.targetCount)}/${b.targetCount})</span>
+          <strong style="color:var(--accent-amber);">${b.reward} B</strong>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function updateBatchBar() {
+      const bar = document.getElementById('batchBar');
+      if (selectedFileIds.size > 0) {
+        bar.style.display = 'flex';
+        document.getElementById('batchCountText').textContent = `${selectedFileIds.size} file(s) selected`;
+      } else {
+        bar.style.display = 'none';
+      }
+    }
+
+    // --- GAME MECHANICS ---
+    function moveSelectedFilesTo(targetFolderPath) {
+      let movedAny = false;
+      const shieldLevel = UPGRADES.find(u => u.id === 'shield_boost').level;
+      const bonusTime = shieldLevel * 15;
+
+      selectedFileIds.forEach(id => {
+        const file = files.find(f => f.id === id);
+        if (file) {
+          const wasCorrect = file.currentFolder === file.targetFolder;
+          file.currentFolder = targetFolderPath;
+
+          const isNowCorrect = file.currentFolder === file.targetFolder;
+          if (!wasCorrect && isNowCorrect) {
+            bytesEarned += 10;
+          }
+
+          if (file.ext === 'exe' || file.ext === 'py') {
+            if (targetFolderPath === 'C:/Downloads/Safe_Staging') {
+              file.graceTimer = 30 + bonusTime;
+              file.corrupted = false;
+            } else if (!isNowCorrect && file.graceTimer === null) {
+              file.graceTimer = 30 + bonusTime;
+            }
+          }
+
+          movedAny = true;
+        }
+      });
+
+      if (movedAny) {
+        selectedFileIds.clear();
+        updateBatchBar();
+        saveState();
+        renderAll();
+      }
+    }
+
+    function startAutomationTimers() {
+      // Corruption Countdown & Quarantine Purge
+      setInterval(() => {
+        let stateChanged = false;
+        const purgeUpgrade = UPGRADES.find(u => u.id === 'quarantine_purge').level > 0;
+
+        files.forEach(file => {
+          // Grace period countdown
+          if ((file.ext === 'exe' || file.ext === 'py') && file.currentFolder !== 'C:/Downloads/Safe_Staging' && file.currentFolder !== file.targetFolder) {
+            if (file.graceTimer !== null && file.graceTimer > 0) {
+              file.graceTimer--;
+              stateChanged = true;
+              if (file.graceTimer === 0) {
+                file.corrupted = true;
+              }
+            }
+          }
+
+          // Auto-clean inside Quarantine Vault
+          if (purgeUpgrade && file.currentFolder === 'E:/Quarantine_Vault' && file.corrupted) {
+            file.corrupted = false;
+            stateChanged = true;
+          }
+        });
+
+        if (stateChanged) renderFileList();
+      }, 1000);
+
+      // Auto-Sort Bot Execution
+      setInterval(() => {
+        const botLevel = UPGRADES.find(u => u.id === 'auto_bot').level;
+        if (botLevel > 0) {
+          let sorted = 0;
+          for (let i = 0; i < files.length && sorted < botLevel; i++) {
+            const f = files[i];
+            if (f.currentFolder !== f.targetFolder && f.ext !== 'exe' && f.ext !== 'py') {
+              f.currentFolder = f.targetFolder;
+              bytesEarned += 5;
+              sorted++;
+            }
+          }
+          if (sorted > 0) {
+            saveState();
+            renderAll();
+          }
+        }
+      }, 10000);
+    }
+
+    function setupEventListeners() {
+      document.getElementById('resetSaveBtn').onclick = () => {
+        if (confirm("Reset all sorting progress and start fresh?")) {
+          localStorage.removeItem(STORAGE_KEY);
+          generateFreshFiles();
+          renderAll();
+        }
+      };
+
+      document.getElementById('autoSortEasyBtn').onclick = () => {
+        let sortedCount = 0;
+        files.forEach(file => {
+          if (['png', 'jpg', 'mp3', 'pdf', 'zip'].includes(file.ext) && file.currentFolder !== file.targetFolder) {
+            file.currentFolder = file.targetFolder;
+            bytesEarned += 5;
+            sortedCount++;
+          }
+        });
+        if (sortedCount > 0) {
+          saveState();
+          renderAll();
+        }
+      };
+
+      document.getElementById('selectAllBtn').onclick = () => {
+        const currentFiles = files.filter(f => f.currentFolder === currentFolder);
+        currentFiles.forEach(f => selectedFileIds.add(f.id));
+        updateBatchBar();
+        renderFileList();
+      };
+
+      document.getElementById('clearSelectionBtn').onclick = () => {
+        selectedFileIds.clear();
+        updateBatchBar();
+        renderFileList();
+      };
+
+      document.getElementById('batchStarBtn').onclick = () => {
+        selectedFileIds.forEach(id => {
+          const f = files.find(item => item.id === id);
+          if (f) f.starred = true;
+        });
+        saveState();
+        renderFileList();
+      };
+
+      document.getElementById('searchInput').oninput = () => renderFileList();
+      document.getElementById('statusFilter').onchange = () => renderFileList();
+
+      document.getElementById('prevPageBtn').onclick = () => { if (currentPage > 1) { currentPage--; renderFileList(); } };
+      document.getElementById('nextPageBtn').onclick = () => { currentPage++; renderFileList(); };
+
+      // Tech Shop Modal
+      const shopModal = document.getElementById('shopModal');
+      document.getElementById('techShopBtn').onclick = () => {
+        renderShop();
+        shopModal.classList.add('active');
+      };
+      document.getElementById('closeShopModal').onclick = () => shopModal.classList.remove('active');
+      document.getElementById('closeShopModalBtn').onclick = () => shopModal.classList.remove('active');
+
+      // Batch Move Modal
+      const batchMoveModal = document.getElementById('batchMoveModal');
+      document.getElementById('batchMoveModalBtn').onclick = () => {
+        renderBatchFolderTree();
+        batchMoveModal.classList.add('active');
+      };
+      document.getElementById('closeBatchMoveModal').onclick = () => batchMoveModal.classList.remove('active');
+
+      // Puzzle Index Modal
+      const puzzleModal = document.getElementById('puzzleModal');
+      document.getElementById('puzzleHelperBtn').onclick = () => {
+        populatePuzzleIndex();
+        puzzleModal.classList.add('active');
+      };
+      document.getElementById('closePuzzleModal').onclick = () => puzzleModal.classList.remove('active');
+      document.getElementById('closePuzzleModalBtn').onclick = () => puzzleModal.classList.remove('active');
+    }
+
+    function renderShop() {
+      const container = document.getElementById('shopContainer');
+      container.innerHTML = '';
+
+      UPGRADES.forEach(u => {
+        const div = document.createElement('div');
+        div.className = 'shop-item';
+        div.innerHTML = `
+          <div>
+            <strong>${u.name} (Lvl ${u.level}/${u.max})</strong>
+            <div style="font-size:0.8rem; color:var(--text-muted);">${u.desc}</div>
+          </div>
+          <button class="primary" ${u.level >= u.max || bytesEarned < u.cost ? 'disabled' : ''}>
+            ${u.level >= u.max ? 'MAX' : `Buy (${u.cost} B)`}
+          </button>
+        `;
+
+        const btn = div.querySelector('button');
+        btn.onclick = () => {
+          if (bytesEarned >= u.cost && u.level < u.max) {
+            bytesEarned -= u.cost;
+            u.level++;
+            u.cost = Math.floor(u.cost * 1.5);
+            saveState();
+            renderStats();
+            renderShop();
+          }
+        };
+
+        container.appendChild(div);
+      });
+    }
+
+    function renderBatchFolderTree() {
+      const tree = document.getElementById('batchFolderTree');
+      tree.innerHTML = '';
+
+      Object.keys(FOLDERS).forEach(path => {
+        const li = document.createElement('li');
+        li.className = 'folder-item';
+        li.innerHTML = `<span>📁</span> <span>${FOLDERS[path].label}</span>`;
+        li.onclick = () => {
+          moveSelectedFilesTo(path);
+          document.getElementById('batchMoveModal').classList.remove('active');
+        };
+        tree.appendChild(li);
+      });
+    }
+
+    function populatePuzzleIndex() {
+      const grid = document.getElementById('puzzleIndexGrid');
+      grid.innerHTML = '';
+
+      MAPPING_RULES.forEach(rule => {
+        const item = document.createElement('div');
+        item.className = 'puzzle-hint-item';
+        item.innerHTML = `
+          <div>Extension: <span class="puzzle-ext">.${rule.ext}</span></div>
+          <div>Destination: <strong>${FOLDERS[rule.target]?.label || rule.target}</strong></div>
+        `;
+        grid.appendChild(item);
+      });
+    }
+
+    window.onload = init;
+  </script>
 </body>
 </html>
